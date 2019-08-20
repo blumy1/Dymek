@@ -1,0 +1,50 @@
+<resources>
+    <string name="app_name">Dymek</string>
+    <string name="title_activity_device_controller">Kontroler</string>
+    <string name="ble_not_supported">BLE is not supported</string>
+    <string name="label_device_address">Device address:</string>
+    <string name="label_state">State:</string>
+    <string name="no_data">No data</string>
+    <string name="connected">Połączony</string>
+    <string name="disconnected">Rozłączony</string>
+    <string name="title_devices">BLE Device Scan</string>
+    <string name="error_bluetooth_not_supported">Bluetooth not supported.</string>
+    <string name="on">On</string>
+    <string name="off">Off</string>
+    <string name="off_alarm">Wyłącz alarm</string>
+    <string name="controller">Kontroler</string>
+
+    <string name="unknown_device">Unknown device</string>
+    <string name="unknown_characteristic">Unknown characteristic</string>
+    <string name="unknown_service">Unknown service</string>
+
+    <!-- Menu items -->
+    <string name="menu_connect">Połącz</string>
+    <string name="menu_disconnect">Rozłącz</string>
+    <string name="scan">Skanuj</string>
+    <string name="stop">Stop</string>
+    <string name="button">Wyślij</string>
+    <string name="default_temp1_name">Temp 1</string>
+    <string name="default_temp2_name">Temp 2</string>
+    <string name="default_temp_min">0.0</string>
+    <string name="default_temp_max">100.0</string>
+    <string name="title_activity_controller_settings">Ustawienia</string>
+    <string name="nazwa_temperatury_2">Nazwa temperatury 2</string>
+    <string name="nazwa_temperatry_1">Nazwa temperatry 1</string>
+    <string name="temperatura_2_max">Temperatura 2 Max</string>
+    <string name="temperatura_2_min">Temperatura 2 Min</string>
+    <string name="temperatura_1_max">Temperatura 1 Max</string>
+    <string name="temperatura_1_min">Temperatura 1 Min</string>
+    <string name="title_activity_device_scan">Dostępne urządzenia</string>
+    <string name="connect_to_device">Połącz się z urządzeniem</string>
+    <string name="connecting">Łączenie</string>
+    <string name="authorizing">Autoryzowanie</string>
+    <string name="set">Ustaw</string>
+    <string name="first_sensor">Pierwszy Czujnik</string>
+    <string name="temp_name">Nazwa temperatury</string>
+    <string name="min">Min</string>
+    <string name="max">Max</string>
+    <string name="second_sensor">Drugi Czujnik</string>
+    <string name="initial_temp">00.0</string>
+    <string name="disconnect_device">Odłącz urządzenie</string>
+</resources>

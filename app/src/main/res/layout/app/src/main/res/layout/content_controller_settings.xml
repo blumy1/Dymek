@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior"
+    tools:context=".activities.ControllerSettingsActivity"
+    tools:showIn="@layout/activity_controller_settings"
+    android:background="@color/colorPrimary">
+
+    <Button
+        android:id="@+id/set_btn"
+        android:layout_width="150dp"
+        android:layout_height="60dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:layout_marginBottom="32dp"
+        android:background="@drawable/rounded_outline_button"
+        android:text="@string/set"
+        android:textColor="@color/colorAccent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <ScrollView
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginBottom="32dp"
+        app:layout_constraintBottom_toTopOf="@+id/set_btn"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.0">
+
+        <LinearLayout
+            android:focusableInTouchMode="true"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <LinearLayout
+                android:id="@+id/disconnect_ll"
+                android:layout_marginTop="32dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_gravity="center">
+
+                <ImageView
+                    android:id="@+id/disconnect_iv"
+                    android:src="@drawable/ic_clear"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"/>
+
+                <TextView
+                    android:layout_marginStart="4dp"
+                    android:id="@+id/disconnect_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/disconnect_device"
+                    android:textAlignment="center"
+                    android:textColor="@color/colorAccent"
+                    android:textSize="17sp"/>
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/firstSensor_tv"
+                android:layout_gravity="center"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="42dp"
+                android:text="@string/first_sensor"
+                android:textAlignment="center"
+                android:textColor="@color/colorAccent"
+                android:textSize="20sp"/>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="230dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="22dp">
+
+                <TextView
+                    android:id="@+id/temp1Name_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="2dp"
+                    android:text="@string/temp_name"
+                    android:textAlignment="center"
+                    android:textColor="@color/white"
+                    android:textSize="18sp"
+                    app:layout_constraintBottom_toTopOf="@+id/temp1Name_et"
+                    app:layout_constraintStart_toStartOf="@+id/temp1Name_et" />
+
+                <EditText
+                    android:id="@+id/temp1Name_et"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/rounded_dark_grey_text_bg"
+                    android:text="@string/default_temp1_name"
+                    android:textAlignment="center"
+                    android:textColor="@color/white"
+                    app:layout_constraintBottom_toBottomOf="parent"/>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="230dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="22dp">
+
+                <TextView
+                    android:id="@+id/temp1Min_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="2dp"
+                    android:text="@string/min"
+                    android:textAlignment="center"
+                    android:textColor="@color/white"
+                    android:textSize="18sp"
+                    app:layout_constraintBottom_toTopOf="@+id/temp1Min_et"
+                    app:layout_constraintStart_toStartOf="@+id/temp1Min_et" />
+
+                <EditText
+                    android:id="@+id/temp1Min_et"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/rounded_dark_grey_text_bg"
+                    android:text="@string/default_temp_min"
+                    android:inputType="numberDecimal"
+                    android:textAlignment="center"
+                    android:textColor="@color/white"
+                    app:layout_constraintBottom_toBottomOf="parent"/>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="230dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="22dp">
+
+                <TextView
+                    android:id="@+id/temp1Max_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="2dp"
+                    android:text="@string/min"
+                    android:textAlignment="center"
+                    android:textColor="@color/white"
+                    android:textSize="18sp"
+                    app:layout_constraintBottom_toTopOf="@+id/temp1Max_et"
+                    app:layout_constraintStart_toStartOf="@+id/temp1Max_et" />
+
+                <EditText
+                    android:id="@+id/temp1Max_et"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/rounded_dark_grey_text_bg"
+                    android:text="@string/default_temp_max"
+                    android:inputType="numberDecimal"
+                    android:textAlignment="center"
+                    android:textColor="@color/white"
+                    app:layout_constraintBottom_toBottomOf="parent"/>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <TextView
+                android:id="@+id/secondSensor_tv"
+                android:layout_gravity="center"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="32dp"
+                android:text="@string/second_sensor"
+                android:textAlignment="center"
+                android:textColor="@color/colorAccent"
+                android:textSize="20sp"/>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="230dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="22dp">
+
+                <TextView
+                    android:id="@+id/temp2Name_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="2dp"
+                    android:text="@string/temp_name"
+                    android:textAlignment="center"
+                    android:textColor="@color/white"
+                    android:textSize="18sp"
+                    app:layout_constraintBottom_toTopOf="@+id/temp2Name_et"
+                    app:layout_constraintStart_toStartOf="@+id/temp2Name_et" />
+
+                <EditText
+                    android:id="@+id/temp2Name_et"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/rounded_dark_grey_text_bg"
+                    android:text="@string/default_temp2_name"
+                    android:textAlignment="center"
+                    android:textColor="@color/white"
+                    app:layout_constraintBottom_toBottomOf="parent"/>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="230dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="22dp">
+
+                <TextView
+                    android:id="@+id/temp2Min_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="2dp"
+                    android:text="@string/min"
+                    android:textAlignment="center"
+                    android:textColor="@color/white"
+                    android:textSize="18sp"
+                    app:layout_constraintBottom_toTopOf="@+id/temp2Min_et"
+                    app:layout_constraintStart_toStartOf="@+id/temp2Min_et" />
+
+                <EditText
+                    android:id="@+id/temp2Min_et"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/rounded_dark_grey_text_bg"
+                    android:text="@string/default_temp_min"
+                    android:inputType="numberDecimal"
+                    android:textAlignment="center"
+                    android:textColor="@color/white"
+                    app:layout_constraintBottom_toBottomOf="parent"/>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="230dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="22dp">
+
+                <TextView
+                    android:id="@+id/temp2Max_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="2dp"
+                    android:text="@string/min"
+                    android:textAlignment="center"
+                    android:textColor="@color/white"
+                    android:textSize="18sp"
+                    app:layout_constraintBottom_toTopOf="@+id/temp2Max_et"
+                    app:layout_constraintStart_toStartOf="@+id/temp2Max_et" />
+
+                <EditText
+                    android:id="@+id/temp2Max_et"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/rounded_dark_grey_text_bg"
+                    android:text="@string/default_temp_max"
+                    android:inputType="numberDecimal"
+                    android:textAlignment="center"
+                    android:textColor="@color/white"
+                    app:layout_constraintBottom_toBottomOf="parent"/>
+
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+        </LinearLayout>
+    </ScrollView>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>
