@@ -1,10 +1,11 @@
-package sb.blumek.dymek;
+package sb.blumek.dymek.activities;
 
 import android.os.Bundle;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import sb.blumek.dymek.R;
 import sb.blumek.dymek.fragments.ScanDevicesFragment;
 
 public class MainActivity extends AppCompatActivity {

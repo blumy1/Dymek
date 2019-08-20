@@ -4,6 +4,7 @@ android {
     compileSdkVersion 29
     buildToolsVersion "29.0.1"
     defaultConfig {
+        vectorDrawables.useSupportLibrary = true
         applicationId "sb.blumek.dymek"
         minSdkVersion 21
         targetSdkVersion 29
