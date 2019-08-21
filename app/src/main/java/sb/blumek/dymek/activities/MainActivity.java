@@ -6,6 +6,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import sb.blumek.dymek.R;
+import sb.blumek.dymek.fragments.DeviceControllerFragment;
 import sb.blumek.dymek.fragments.ScanDevicesFragment;
 
 public class MainActivity extends AppCompatActivity {
@@ -18,7 +19,10 @@ public class MainActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
         getSupportActionBar().setTitle(null);
 
-        getSupportFragmentManager().beginTransaction().add(R.id.fragment, new ScanDevicesFragment(), "devices").commit();
+        getSupportFragmentManager()
+                .beginTransaction()
+                .add(R.id.fragment, new ScanDevicesFragment(), "devices")
+                .commit();
     }
 
 }
