@@ -24,11 +24,7 @@ public class DevicesAdapter extends RecyclerView.Adapter<DevicesAdapter.MyViewHo
         void onItemClick(BluetoothDevice bluetoothDevice);
     }
 
-    public void setOnItemClickListener(OnItemClickListener onItemClickListener) {
-        this.onItemClickListener = onItemClickListener;
-    }
-
-    public void addDevice(BluetoothDevice device) {
+    public void addDeviceAndNotify(BluetoothDevice device) {
         if (deviceList == null ||
                 deviceList.contains(device))
             return;
@@ -46,11 +42,11 @@ public class DevicesAdapter extends RecyclerView.Adapter<DevicesAdapter.MyViewHo
         notifyDataSetChanged();
     }
 
-    public static class MyViewHolder extends RecyclerView.ViewHolder {
+    static class MyViewHolder extends RecyclerView.ViewHolder {
         TextView deviceAddressTV;
         TextView deviceNameTV;
 
-        public MyViewHolder(@NonNull View itemView) {
+        MyViewHolder(@NonNull View itemView) {
             super(itemView);
             deviceAddressTV = itemView.findViewById(R.id.address_tv);
             deviceNameTV = itemView.findViewById(R.id.name_tv);

@@ -6,7 +6,6 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
@@ -64,7 +63,7 @@ public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnIt
                         return;
 
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    mAdapter.addDevice(device);
+                    mAdapter.addDeviceAndNotify(device);
                 }
             }
         };
@@ -139,7 +138,7 @@ public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnIt
         updateOptionsMenu();
     }
 
-    void stopScanningDevices() {
+    private void stopScanningDevices() {
         if (bluetoothAdapter == null) {
             Log.w(TAG, "A bluetooth adapter is disabled.");
             return;
@@ -156,7 +155,7 @@ public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnIt
         getActivity().invalidateOptionsMenu();
     }
 
-    public void configureScanButton() {
+    private void configureScanButton() {
         if (isScanning)
             scanButton.setText(R.string.stop);
         else
@@ -237,7 +236,9 @@ public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnIt
         getActivity()
                 .getSupportFragmentManager()
                 .beginTransaction()
-                .replace(R.id.fragment, new DeviceControllerFragment(), "controller")
+                .replace(R.id.fragment,
+                        new DeviceControllerFragment(bluetoothDevice.getName(),
+                                bluetoothDevice.getAddress()), "controller")
                 .commit();
     }
 }
