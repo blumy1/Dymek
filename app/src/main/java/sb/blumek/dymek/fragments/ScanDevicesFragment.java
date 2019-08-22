@@ -36,14 +36,15 @@ import sb.blumek.dymek.adapters.DevicesAdapter;
 public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnItemClickListener {
     private final static String TAG = ScanDevicesFragment.class.getSimpleName();
 
-    private RecyclerView recyclerView;
     private DevicesAdapter mAdapter;
-    private RecyclerView.LayoutManager layoutManager;
     private Button scanButton;
 
     private static final int REQUEST_ACCESS_COARSE_LOCATION = 99;
     private static final int REQUEST_ENABLE_BT = 1;
     private static final long SCAN_PERIOD = 10 * 1000;
+    private static final String CORRECT_DEVICE_WARN = "Wybrane urządzenie ma inną nazwę niż " +
+            "dedykowany sprzęt do aplikacji - %s, możesz potem odłączyć zatwierdzone urządzenie " +
+            "w ustawieniach kontrolera.";
 
     private boolean isScanning;
     private Handler mHandler;
@@ -53,6 +54,7 @@ public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnIt
 
     public ScanDevicesFragment() {
         mHandler = new Handler();
+        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
         receiver = new BroadcastReceiver() {
             public void onReceive(Context context, Intent intent) {
@@ -62,9 +64,6 @@ public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnIt
                         return;
 
                     BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                    if (device != null) {
-                        Log.i(TAG, device.getName());
-                    }
                     mAdapter.addDevice(device);
                 }
             }
@@ -87,8 +86,6 @@ public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnIt
             getActivity().finish();
         }
 
-        bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-
         if (bluetoothAdapter == null) {
             new AlertDialog.Builder(getActivity(), AlertDialog.THEME_DEVICE_DEFAULT_DARK)
                     .setTitle("Not compatible")
@@ -110,12 +107,11 @@ public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnIt
             }
         });
 
-        recyclerView = view.findViewById(R.id.devices_RV);
+        RecyclerView recyclerView = view.findViewById(R.id.devices_RV);
         recyclerView.setHasFixedSize(true);
-        layoutManager = new LinearLayoutManager(getActivity());
+        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(getActivity());
         recyclerView.setLayoutManager(layoutManager);
-        mAdapter = new DevicesAdapter();
-        mAdapter.setOnItemClickListener(this);
+        mAdapter = new DevicesAdapter(this);
         recyclerView.setAdapter(mAdapter);
     }
 
@@ -127,23 +123,20 @@ public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnIt
 
         mHandler.postDelayed(this::stopScanningDevices, SCAN_PERIOD);
 
-        Log.d(TAG, "Checking for required permissions.");
         if (ContextCompat.checkSelfPermission(getActivity(),
                 Manifest.permission.ACCESS_COARSE_LOCATION)
                 != PackageManager.PERMISSION_GRANTED) {
 
             Log.w(TAG, "Need additional permissions.");
-            Log.d(TAG, "Asking for permissions.");
             ActivityCompat.requestPermissions(getActivity(),
                     new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
                     REQUEST_ACCESS_COARSE_LOCATION);
         }
 
-        Log.d(TAG, "Starting devices discovery.");
         isScanning = true;
         bluetoothAdapter.startDiscovery();
         configureScanButton();
-        getActivity().invalidateOptionsMenu();
+        updateOptionsMenu();
     }
 
     void stopScanningDevices() {
@@ -152,22 +145,22 @@ public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnIt
             return;
         }
 
-        Log.d(TAG, "Canceling devices discovery.");
         isScanning = false;
         bluetoothAdapter.cancelDiscovery();
         configureScanButton();
+        updateOptionsMenu();
+    }
+
+    private void updateOptionsMenu() {
+        if (getActivity() != null)
         getActivity().invalidateOptionsMenu();
     }
 
     public void configureScanButton() {
-        Log.d(TAG, "Configuring a scan button.");
-        if (isScanning) {
-            Log.d(TAG, "Configuring the scan button to stop scanning.");
+        if (isScanning)
             scanButton.setText(R.string.stop);
-        } else {
-            Log.d(TAG, "Configuring the scan button to start scanning.");
+        else
             scanButton.setText(R.string.scan);
-        }
     }
 
     @Override
@@ -182,15 +175,12 @@ public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnIt
     @Override
     public void onResume() {
         super.onResume();
-        Log.d(TAG, "Resuming the activity,");
 
-        Log.d(TAG, "Registering a receiver.");
         IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND);
         getActivity().registerReceiver(receiver, filter);
 
         if (bluetoothAdapter != null && !bluetoothAdapter.isEnabled()) {
             Log.w(TAG, "The bluetooth adapter is not enabled.");
-            Log.d(TAG, "Asking for enabling the bluetooth");
             Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableBtIntent, REQUEST_ENABLE_BT);
         }
@@ -202,10 +192,8 @@ public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnIt
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.scan_menu, menu);
         if (!isScanning) {
-            Log.d(TAG, "Turning off a progress bar.");
             menu.findItem(R.id.menu_refresh).setActionView(null);
         } else {
-            Log.d(TAG, "Turning on a progress bar.");
             menu.findItem(R.id.menu_refresh).setActionView(
                     R.layout.actionbar_progress_bar);
         }
@@ -213,7 +201,6 @@ public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnIt
 
     @Override
     public void onItemClick(BluetoothDevice bluetoothDevice) {
-        Log.d(TAG, "An user taps on device.");
         if (bluetoothDevice != null && !bluetoothDevice
                 .getName()
                 .toLowerCase()
@@ -223,26 +210,23 @@ public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnIt
                         .toLowerCase()
                         .trim())) {
 
-            Log.w(TAG, "The user may have selected wrong device.");
-
             new AlertDialog.Builder(getActivity(), AlertDialog.THEME_DEVICE_DEFAULT_DARK)
-                    .setTitle("Czy na pewno?")
-                    .setMessage("Wybrane urządzenie ma inną nazwę niż dedykowany sprzęt do aplikacji - \""
-                            + getResources().getString(R.string.app_name)
-                            + "\", możesz potem odłączyć zatwierdzone urządzenie w ustawieniach kontrolera.")
-                    .setPositiveButton("Wiem co robię", (dialog, which) -> {
-                        Log.i(TAG, "The user confirms the selection.");
+                    .setTitle(getResources()
+                            .getString(R.string.are_you_sure))
+                    .setMessage(String.format(CORRECT_DEVICE_WARN, getResources()
+                            .getString(R.string.app_name)))
+                    .setPositiveButton(getResources()
+                            .getString(R.string.i_know_what_im_doing), (dialog, which) -> {
                         openDeviceController(bluetoothDevice);
                     })
-                    .setNegativeButton("Chcę zmienić wybór", (dialog, which) ->
-                            Log.i(TAG, "The user gives up the selection."))
+                    .setNegativeButton(getResources()
+                            .getString(R.string.i_want_to_change_selection), (dialog, which) ->
+                            Log.w(TAG, "The user gives up the selection."))
                     .setIcon(android.R.drawable.ic_dialog_alert)
                     .show();
 
-        } else if (bluetoothDevice != null) {
-            Log.d(TAG, "The user selects a device.");
+        } else if (bluetoothDevice != null)
             openDeviceController(bluetoothDevice);
-        }
     }
 
     private void openDeviceController(BluetoothDevice bluetoothDevice) {

@@ -51,4 +51,7 @@
 
     <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="i_know_what_im_doing">Wiem co robię</string>
+    <string name="i_want_to_change_selection">Chcę zmienić wybór</string>
+    <string name="are_you_sure">Czy na pewno?</string>
 </resources>
