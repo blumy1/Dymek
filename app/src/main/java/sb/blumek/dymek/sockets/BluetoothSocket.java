@@ -59,7 +59,7 @@ public class BluetoothSocket extends BluetoothGattCallback {
     private boolean connected;
     private int payloadSize = DEFAULT_MTU-3;
 
-    BluetoothSocket() {
+    public BluetoothSocket() {
         writeBuffer = new ArrayList<>();
         pairingIntentFilter = new IntentFilter();
         pairingIntentFilter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED);
@@ -80,7 +80,7 @@ public class BluetoothSocket extends BluetoothGattCallback {
         };
     }
 
-    void disconnect() {
+    public void disconnect() {
         Log.d(TAG, "disconnect");
         listener = null; // ignore remaining data and errors
         device = null;
@@ -114,7 +114,7 @@ public class BluetoothSocket extends BluetoothGattCallback {
     /**
      * connect-success and most connect-errors are returned asynchronously to listener
      */
-    void connect(Context context, BluetoothListener listener, BluetoothDevice device) throws IOException {
+    public void connect(Context context, BluetoothListener listener, BluetoothDevice device) throws IOException {
         if(connected || gatt != null)
             throw new IOException("already connected");
         canceled = false;
@@ -168,6 +168,8 @@ public class BluetoothSocket extends BluetoothGattCallback {
             if (!gatt.discoverServices())
                 onSerialConnectError(new IOException("discoverServices failed"));
         } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+            Log.i("TAG", "xDDDDD");
+
             if (connected)
                 onSerialIoError     (new IOException("gatt status " + status));
             else
@@ -328,7 +330,7 @@ public class BluetoothSocket extends BluetoothGattCallback {
     /*
      * write
      */
-    void write(byte[] data) throws IOException {
+    public void write(byte[] data) throws IOException {
         if(canceled || !connected || writeCharacteristic == null)
             throw new IOException("not connected");
         byte[] data0;

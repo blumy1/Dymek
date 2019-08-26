@@ -33,8 +33,9 @@ import sb.blumek.dymek.R;
 import sb.blumek.dymek.adapters.DevicesAdapter;
 
 public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnItemClickListener {
-    private final static String TAG = ScanDevicesFragment.class.getSimpleName();
+    public final static String TAG = ScanDevicesFragment.class.getSimpleName();
 
+    private Menu menu;
     private DevicesAdapter mAdapter;
     private Button scanButton;
 
@@ -74,6 +75,12 @@ public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnIt
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_scan_devices, container, false);
+    }
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setHasOptionsMenu(true);
     }
 
     @Override
@@ -135,7 +142,7 @@ public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnIt
         isScanning = true;
         bluetoothAdapter.startDiscovery();
         configureScanButton();
-        updateOptionsMenu();
+        showProgressBar();
     }
 
     private void stopScanningDevices() {
@@ -147,12 +154,7 @@ public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnIt
         isScanning = false;
         bluetoothAdapter.cancelDiscovery();
         configureScanButton();
-        updateOptionsMenu();
-    }
-
-    private void updateOptionsMenu() {
-        if (getActivity() != null)
-        getActivity().invalidateOptionsMenu();
+        hideProgressBar();
     }
 
     private void configureScanButton() {
@@ -190,12 +192,23 @@ public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnIt
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.scan_menu, menu);
+        this.menu = menu;
         if (!isScanning) {
-            menu.findItem(R.id.menu_refresh).setActionView(null);
+            hideProgressBar();
         } else {
-            menu.findItem(R.id.menu_refresh).setActionView(
-                    R.layout.actionbar_progress_bar);
+            showProgressBar();
         }
+    }
+
+    private void showProgressBar() {
+        if (getActivity() != null && menu != null)
+            menu.findItem(R.id.menu_refresh).setActionView(
+                R.layout.actionbar_progress_bar);
+    }
+
+    private void hideProgressBar() {
+        if (getActivity() != null && menu != null)
+            menu.findItem(R.id.menu_refresh).setActionView(null);
     }
 
     @Override
@@ -238,7 +251,7 @@ public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnIt
                 .beginTransaction()
                 .replace(R.id.fragment,
                         new DeviceControllerFragment(bluetoothDevice.getName(),
-                                bluetoothDevice.getAddress()), "controller")
+                                bluetoothDevice.getAddress()), DeviceControllerFragment.TAG)
                 .commit();
     }
 }

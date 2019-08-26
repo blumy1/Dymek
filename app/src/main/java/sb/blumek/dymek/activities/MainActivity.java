@@ -21,7 +21,7 @@ public class MainActivity extends AppCompatActivity {
 
         getSupportFragmentManager()
                 .beginTransaction()
-                .add(R.id.fragment, new ScanDevicesFragment(), "devices")
+                .add(R.id.fragment, new ScanDevicesFragment(), ScanDevicesFragment.TAG)
                 .commit();
     }
 

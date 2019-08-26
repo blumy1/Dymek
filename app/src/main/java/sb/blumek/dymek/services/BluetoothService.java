@@ -5,6 +5,8 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
@@ -12,6 +14,11 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
+import android.text.Spannable;
+import android.text.SpannableStringBuilder;
+import android.text.style.ForegroundColorSpan;
+import android.util.Log;
+import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
@@ -22,18 +29,16 @@ import java.util.Queue;
 import sb.blumek.dymek.R;
 import sb.blumek.dymek.listeners.BluetoothListener;
 import sb.blumek.dymek.shared.Constants;
+import sb.blumek.dymek.sockets.BluetoothSocket;
 
-/**
- * create notification and queue serial data while activity is not in the foreground
- * use listener chain: SerialSocket -> SerialService -> UI fragment
- */
 public class BluetoothService extends Service implements BluetoothListener {
 
-    class SerialBinder extends Binder {
-        BluetoothService getService() { return BluetoothService.this; }
+    public class ServiceBinder extends Binder {
+        public BluetoothService getService() { return BluetoothService.this; }
     }
 
     private enum QueueType {Connect, ConnectError, Read, IoError}
+    private enum Connected { False, Pending, True }
 
     private class QueueItem {
         QueueType type;
@@ -49,11 +54,15 @@ public class BluetoothService extends Service implements BluetoothListener {
 
     private BluetoothListener listener;
     private boolean connected;
+    private Connected connectionState;
+    private String deviceAddress;
+    private BluetoothSocket socket;
     private String notificationMsg;
+    private String newline = "\r\n";
 
     public BluetoothService() {
         mainLooper = new Handler(Looper.getMainLooper());
-        binder = new SerialBinder();
+        binder = new ServiceBinder();
         queue1 = new LinkedList<>();
         queue2 = new LinkedList<>();
     }
@@ -71,16 +80,51 @@ public class BluetoothService extends Service implements BluetoothListener {
         return binder;
     }
 
-    public void connect(BluetoothListener listener, String notificationMsg) {
-        this.listener = listener;
-        connected = true;
-        this.notificationMsg = notificationMsg;
+    public void connect() {
+        try {
+            BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+            BluetoothDevice device = bluetoothAdapter.getRemoteDevice(deviceAddress);
+            String deviceName = device.getName() != null ? device.getName() : device.getAddress();
+            status("connecting...");
+            connectionState = Connected.Pending;
+            socket = new BluetoothSocket();
+            connected = true;
+            socket.connect(getApplicationContext(), this, device);
+        } catch (Exception e) {
+            onSerialConnectError(e);
+        }
     }
 
     public void disconnect() {
+        connectionState = Connected.False;
+        socket.disconnect();
+        socket = null;
         listener = null;
         connected = false;
         notificationMsg = null;
+    }
+
+    public void send(String str) {
+        if(!isConnected()) {
+            Toast.makeText(getApplicationContext(), "not connected", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        try {
+            SpannableStringBuilder spn = new SpannableStringBuilder(str+'\n');
+            spn.setSpan(new ForegroundColorSpan(getResources().getColor(R.color.colorAccent)), 0, spn.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            byte[] data = (str + newline).getBytes();
+            socket.write(data);
+        } catch (Exception e) {
+            onSerialIoError(e);
+        }
+    }
+
+    public boolean isConnected() {
+        return connectionState == Connected.True;
+    }
+
+    public boolean isDisconnected() {
+        return connectionState == Connected.False;
     }
 
     public void attach(BluetoothListener listener) {
@@ -146,8 +190,6 @@ public class BluetoothService extends Service implements BluetoothListener {
                 .setContentIntent(restartPendingIntent)
                 .setOngoing(true)
                 .addAction(new NotificationCompat.Action(R.drawable.ic_icon, "Disconnect", disconnectPendingIntent));
-        // @drawable/ic_notification created with Android Studio -> New -> Image Asset using @color/colorPrimaryDark as background color
-        // Android < API 21 does not support vectorDrawables in notifications, so both drawables used here, are created as .png instead of .xml
         Notification notification = builder.build();
         startForeground(Constants.NOTIFY_MANAGER_START_FOREGROUND_SERVICE, notification);
     }
@@ -199,6 +241,7 @@ public class BluetoothService extends Service implements BluetoothListener {
     public void onSerialRead(byte[] data) {
         if(connected) {
             synchronized (this) {
+                receive(data);
                 if (listener != null) {
                     mainLooper.post(() -> {
                         if (listener != null) {
@@ -236,4 +279,17 @@ public class BluetoothService extends Service implements BluetoothListener {
         }
     }
 
+    private void receive(byte[] data) {
+        Log.i("TAG", new String(data));
+    }
+
+    private void status(String str) {
+        SpannableStringBuilder spn = new SpannableStringBuilder(str+'\n');
+        spn.setSpan(new ForegroundColorSpan(getResources().getColor(R.color.colorAccent)), 0, spn.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        Log.i("TAG", spn.toString());
+    }
+
+    public void setDeviceAddress(String deviceAddress) {
+        this.deviceAddress = deviceAddress;
+    }
 }
