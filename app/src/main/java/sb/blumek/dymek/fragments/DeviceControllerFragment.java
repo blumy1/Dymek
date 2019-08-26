@@ -13,13 +13,13 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import android.os.IBinder;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.TextView;
 
 import sb.blumek.dymek.R;
@@ -31,7 +31,6 @@ import sb.blumek.dymek.shared.Temperature;
 public class DeviceControllerFragment extends Fragment implements ServiceConnection, Observer {
     public final static String TAG = ScanDevicesFragment.class.getSimpleName();
 
-    private String deviceName;
     private String deviceAddress;
 
     private TextView temp1TV;
@@ -39,12 +38,13 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
     private TextView temp1NameTV;
     private TextView temp2NameTV;
     private View separatorV;
+    private Button alarmBTN;
+    private TextView connectionStateTV;
 
     private BluetoothService service;
     private boolean initialStart = true;
 
-    public DeviceControllerFragment(String deviceName, String deviceAddress) {
-        this.deviceName = deviceName;
+    public DeviceControllerFragment(String deviceAddress) {
         this.deviceAddress = deviceAddress;
     }
 
@@ -61,6 +61,8 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
 
             temp2NameTV.setText(temp2.getName());
             temp2TV.setText(String.valueOf(temp2.getTemp()));
+
+            setUpUI();
         }
     }
 
@@ -123,6 +125,7 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
             service.registerObserver(this);
             service.setDeviceAddress(deviceAddress);
             getActivity().runOnUiThread(this::connect);
+            setUpUI();
         }
     }
 
@@ -144,11 +147,21 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
         temp1NameTV = view.findViewById(R.id.temp1Name_tv);
         temp2NameTV = view.findViewById(R.id.temp2Name_tv);
         separatorV = view.findViewById(R.id.separator_v);
+        alarmBTN = view.findViewById(R.id.change_state_btn);
+        connectionStateTV = view.findViewById(R.id.connection_state);
     }
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.controller_menu, menu);
+        if (service != null &&
+                service.isConnected()) {
+            menu.findItem(R.id.menu_connect).setVisible(false);
+            menu.findItem(R.id.menu_disconnect).setVisible(true);
+        } else {
+            menu.findItem(R.id.menu_connect).setVisible(true);
+            menu.findItem(R.id.menu_disconnect).setVisible(false);
+        }
     }
 
     private void connect() {
@@ -157,14 +170,70 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        return true;
+        switch(item.getItemId()) {
+            case R.id.menu_connect:
+                connect();
+                return true;
+            case R.id.menu_disconnect:
+                disconnect();
+                return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     private void disconnect() {
         service.disconnect();
+        setUpUI();
+        refreshActionBarMenu();
     }
 
-    private void send(String str) {
-        service.send(str);
+    private void refreshActionBarMenu() {
+        if (getActivity() != null)
+            getActivity().invalidateOptionsMenu();
+    }
+
+    private void send(String message) {
+        service.send(message);
+    }
+
+    private void hideUI() {
+        temp1TV.setVisibility(View.INVISIBLE);
+        temp1NameTV.setVisibility(View.INVISIBLE);
+        temp2TV.setVisibility(View.INVISIBLE);
+        temp2NameTV.setVisibility(View.INVISIBLE);
+        separatorV.setVisibility(View.INVISIBLE);
+        alarmBTN.setVisibility(View.INVISIBLE);
+    }
+
+    private void showUI() {
+        temp1TV.setVisibility(View.VISIBLE);
+        temp1NameTV.setVisibility(View.VISIBLE);
+        temp2TV.setVisibility(View.VISIBLE);
+        temp2NameTV.setVisibility(View.VISIBLE);
+        separatorV.setVisibility(View.VISIBLE);
+        alarmBTN.setVisibility(View.VISIBLE);
+    }
+
+    public void disableAlarmButton() {
+        alarmBTN.setEnabled(false);
+        alarmBTN.setBackground(getResources().getDrawable(R.drawable.rounded_outline_button_disabled));
+        alarmBTN.setTextColor(getResources().getColor(R.color.colorPrimaryLight));
+    }
+
+    public void enableAlarmButton() {
+        alarmBTN.setEnabled(true);
+        alarmBTN.setBackground(getResources().getDrawable(R.drawable.rounded_outline_button));
+        alarmBTN.setTextColor(getResources().getColor(R.color.colorAccent));
+    }
+
+    private void setUpUI() {
+        refreshActionBarMenu();
+        if (service.isConnected()) {
+            showUI();
+            connectionStateTV.setText(R.string.connected);
+        } else if (service.isDisconnected()) {
+            hideUI();
+            connectionStateTV.setText(R.string.disconnected);
+        }
     }
 }

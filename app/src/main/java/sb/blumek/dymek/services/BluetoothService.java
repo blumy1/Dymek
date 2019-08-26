@@ -40,7 +40,12 @@ public class BluetoothService extends Service implements BluetoothListener, Obse
         public BluetoothService getService() { return BluetoothService.this; }
     }
 
-    private enum ConnectionState {NotConnected, Pending, Connected}
+    private enum ConnectionState {
+        NotConnected,
+        Pending,
+        Authorizing,
+        Connected}
+
     private final Handler mainLooper;
     private final IBinder binder;
 
@@ -50,7 +55,6 @@ public class BluetoothService extends Service implements BluetoothListener, Obse
     private String deviceAddress;
     private BluetoothSocket socket;
     private String notificationMsg;
-    private String newline = "\r\n";
 
     Temperature temperature1 = new Temperature();
     Temperature temperature2 = new Temperature();
@@ -84,6 +88,7 @@ public class BluetoothService extends Service implements BluetoothListener, Obse
             connectionState = ConnectionState.Pending;
             socket = new BluetoothSocket();
             connected = true;
+            connectionState = ConnectionState.Connected;
             socket.connect(getApplicationContext(), this, device);
         } catch (Exception e) {
             onSerialConnectError(e);
@@ -106,6 +111,7 @@ public class BluetoothService extends Service implements BluetoothListener, Obse
         try {
             SpannableStringBuilder spn = new SpannableStringBuilder(str+'\n');
             spn.setSpan(new ForegroundColorSpan(getResources().getColor(R.color.colorAccent)), 0, spn.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+            String newline = "\r\n";
             byte[] data = (str + newline).getBytes();
             socket.write(data);
         } catch (Exception e) {
@@ -181,6 +187,7 @@ public class BluetoothService extends Service implements BluetoothListener, Obse
             synchronized (this) {
                 mainLooper.post(() -> {
                     receive(data);
+                    handleAvailableCommands();
                     notifyObservers();
                 });
             }
@@ -201,8 +208,6 @@ public class BluetoothService extends Service implements BluetoothListener, Obse
 
     private void receive(byte[] data) {
         appendMessage(new String(data));
-        handleCommands(commandsCache.toString());
-        commandsCache = new StringBuilder(Objects.requireNonNull(CommandUtils.removeCommandFromExp(commandsCache.toString())));
     }
 
     private void status(String str) {
@@ -226,56 +231,94 @@ public class BluetoothService extends Service implements BluetoothListener, Obse
         if (command == null)
             return;
 
-        String welcomeCommand = CommandUtils.getStringFromExp(command, Commands.DEVICE_HI, 0);
-        if (Commands.DEVICE_HI_CLR.equals(welcomeCommand)) {
-            send(Commands.APP_HI);
-        }
+        handleAuthorizationCommand(command);
+        handleTemp1NameCommand(command);
+        handleTemp1Value(command);
+        handleTemp1MinCommand(command);
+        handleTemp1MaxCommand(command);
 
-        String t1Name = CommandUtils.getStringFromExp(command, Commands.TEMP_1_NAME, 1);
-        if (t1Name != null) {
-            temperature1.setName(t1Name);
-        }
-
-        Double temp1 = CommandUtils.getDoubleFromExp(command, Commands.TEMP_1_VALUE, 1);
-        if (temp1 != null) {
-            temperature1.setTemp(temp1);
-        }
-
-        Double t1Min = CommandUtils.getDoubleFromExp(command, Commands.TEMP_1_MIN_VALUE, 1);
-        if (t1Min != null) {
-            temperature1.setTempMin(t1Min);
-        }
-
-        Double t1Max = CommandUtils.getDoubleFromExp(command, Commands.TEMP_1_MAX_VALUE, 1);
-        if (t1Max != null) {
-            temperature1.setTempMax(t1Max);
-        }
-
-        String t2Name = CommandUtils.getStringFromExp(command, Commands.TEMP_2_NAME, 1);
-        if (t2Name != null) {
-            temperature2.setName(t2Name);
-        }
-
-        Double temp2 = CommandUtils.getDoubleFromExp(command, Commands.TEMP_2_VALUE, 1);
-        if (temp2 != null) {
-            temperature2.setTemp(temp2);
-        }
-
-        Double t2Min = CommandUtils.getDoubleFromExp(command, Commands.TEMP_2_MIN_VALUE, 1);
-        if (t2Min != null) {
-            temperature2.setTempMin(t2Min);
-        }
-
-        Double t2Max = CommandUtils.getDoubleFromExp(command, Commands.TEMP_2_MAX_VALUE, 1);
-        if (t2Max != null) {
-            temperature2.setTempMax(t2Max);
-        }
+        handleTemp2NameCommand(command);
+        handleTemp2ValueCommand(command);
+        handleTemp2MinCommand(command);
+        handleTemp2MaxCommand(command);
 
 //        String alarmUp = CommandUtils.getStringFromExp(command, Commands.ALARM_UP, 0);
 //        if (alarmUp != null && isAfterDelay) {
 //            startAlarm();
 //            broadcastUpdate(ACTION_ALARM_RINGING);
 //        }
+    }
+
+    private void handleTemp2MaxCommand(String command) {
+        Double t2Max = CommandUtils.getDoubleFromExp(command, Commands.TEMP_2_MAX_VALUE, 1);
+        if (t2Max != null) {
+            temperature2.setTempMax(t2Max);
+        }
+    }
+
+    private void handleTemp2MinCommand(String command) {
+        Double t2Min = CommandUtils.getDoubleFromExp(command, Commands.TEMP_2_MIN_VALUE, 1);
+        if (t2Min != null) {
+            temperature2.setTempMin(t2Min);
+        }
+    }
+
+    private void handleTemp2ValueCommand(String command) {
+        Double temp2 = CommandUtils.getDoubleFromExp(command, Commands.TEMP_2_VALUE, 1);
+        if (temp2 != null) {
+            temperature2.setTemp(temp2);
+        }
+    }
+
+    private void handleTemp2NameCommand(String command) {
+        String t2Name = CommandUtils.getStringFromExp(command, Commands.TEMP_2_NAME, 1);
+        if (t2Name != null) {
+            temperature2.setName(t2Name);
+        }
+    }
+
+    private void handleTemp1MaxCommand(String command) {
+        Double t1Max = CommandUtils.getDoubleFromExp(command, Commands.TEMP_1_MAX_VALUE, 1);
+        if (t1Max != null) {
+            temperature1.setTempMax(t1Max);
+        }
+    }
+
+    private void handleTemp1MinCommand(String command) {
+        Double t1Min = CommandUtils.getDoubleFromExp(command, Commands.TEMP_1_MIN_VALUE, 1);
+        if (t1Min != null) {
+            temperature1.setTempMin(t1Min);
+        }
+    }
+
+    private void handleTemp1Value(String command) {
+        Double temp1 = CommandUtils.getDoubleFromExp(command, Commands.TEMP_1_VALUE, 1);
+        if (temp1 != null) {
+            temperature1.setTemp(temp1);
+        }
+    }
+
+    private void handleTemp1NameCommand(String command) {
+        String t1Name = CommandUtils.getStringFromExp(command, Commands.TEMP_1_NAME, 1);
+        if (t1Name != null) {
+            temperature1.setName(t1Name);
+        }
+    }
+
+    private void handleAuthorizationCommand(String command) {
+        String welcomeCommand = CommandUtils.getStringFromExp(command, Commands.DEVICE_HI, 0);
+        if (Commands.DEVICE_HI_CLR.equals(welcomeCommand)) {
+            send(Commands.APP_HI);
+        }
+    }
+
+    private void handleAvailableCommands() {
+        if (CommandUtils.isCommand(commandsCache.toString())) {
+            String command = CommandUtils.getCommand(commandsCache.toString());
+            handleCommands(command);
+
+            commandsCache = new StringBuilder(Objects.requireNonNull(CommandUtils.removeCommandFromExp(commandsCache.toString())));
+        }
     }
 
     public Temperature getTemperature1() {
