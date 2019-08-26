@@ -2,9 +2,6 @@ package sb.blumek.dymek.fragments;
 
 
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -16,10 +13,6 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import android.os.IBinder;
-import android.text.Spannable;
-import android.text.SpannableStringBuilder;
-import android.text.method.ScrollingMovementMethod;
-import android.text.style.ForegroundColorSpan;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -29,10 +22,11 @@ import android.view.View;
 import android.view.ViewGroup;
 
 import sb.blumek.dymek.R;
-import sb.blumek.dymek.listeners.BluetoothListener;
+import sb.blumek.dymek.observables.Observable;
+import sb.blumek.dymek.observables.Observer;
 import sb.blumek.dymek.services.BluetoothService;
 
-public class DeviceControllerFragment extends Fragment implements ServiceConnection, BluetoothListener {
+public class DeviceControllerFragment extends Fragment implements ServiceConnection, Observer {
     public final static String TAG = ScanDevicesFragment.class.getSimpleName();
 
     private String deviceName;
@@ -46,9 +40,13 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
         this.deviceAddress = deviceAddress;
     }
 
-    /*
-     * Lifecycle
-     */
+    @Override
+    public void update(Observable observable) {
+        if (observable instanceof BluetoothService) {
+            Log.i("TAG", "XAXAXAXAXAXAXAXAXA");
+        }
+    }
+
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -67,16 +65,14 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
     @Override
     public void onStart() {
         super.onStart();
-        if(service != null)
-            service.attach(this);
-        else
+        if(service == null)
             getActivity().startService(new Intent(getActivity(), BluetoothService.class)); // prevents service destroy on unbind from recreated activity caused by orientation change
     }
 
     @Override
     public void onStop() {
-        if(service != null && !getActivity().isChangingConfigurations())
-            service.detach();
+//        if(service != null && !getActivity().isChangingConfigurations())
+//            service.detach();
         super.onStop();
     }
 
@@ -107,6 +103,7 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
         service = ((BluetoothService.ServiceBinder) binder).getService();
         if(initialStart && isResumed()) {
             initialStart = false;
+            service.registerObserver(this);
             service.setDeviceAddress(deviceAddress);
             getActivity().runOnUiThread(this::connect);
         }
@@ -142,25 +139,5 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
 
     private void send(String str) {
         service.send(str);
-    }
-
-    @Override
-    public void onSerialConnect() {
-        send("[T1Name-TEST]");
-    }
-
-    @Override
-    public void onSerialConnectError(Exception e) {
-        disconnect();
-    }
-
-    @Override
-    public void onSerialRead(byte[] data) {
-
-    }
-
-    @Override
-    public void onSerialIoError(Exception e) {
-        disconnect();
     }
 }

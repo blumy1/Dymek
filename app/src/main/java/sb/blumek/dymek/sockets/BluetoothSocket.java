@@ -323,7 +323,7 @@ public class BluetoothSocket extends BluetoothGattCallback {
         if(characteristic == readCharacteristic) {
             byte[] data = readCharacteristic.getValue();
             onSerialRead(data);
-            Log.d(TAG,"read, len="+data.length);
+//            Log.d(TAG,"read, len="+data.length);
         }
     }
 
