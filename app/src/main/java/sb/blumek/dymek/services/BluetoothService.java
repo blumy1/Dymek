@@ -23,11 +23,16 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 
+import java.util.Objects;
+
 import sb.blumek.dymek.R;
 import sb.blumek.dymek.listeners.BluetoothListener;
 import sb.blumek.dymek.observables.Observable;
+import sb.blumek.dymek.shared.Commands;
 import sb.blumek.dymek.shared.Constants;
+import sb.blumek.dymek.shared.Temperature;
 import sb.blumek.dymek.sockets.BluetoothSocket;
+import sb.blumek.dymek.utils.CommandUtils;
 
 public class BluetoothService extends Service implements BluetoothListener, Observable {
 
@@ -47,10 +52,15 @@ public class BluetoothService extends Service implements BluetoothListener, Obse
     private String notificationMsg;
     private String newline = "\r\n";
 
+    Temperature temperature1 = new Temperature();
+    Temperature temperature2 = new Temperature();
+
     public BluetoothService() {
         mainLooper = new Handler(Looper.getMainLooper());
         binder = new ServiceBinder();
         commandsCache = new StringBuilder();
+        temperature1.setName("Temp 1");
+        temperature2.setName("Temp 2");
     }
 
     @Override
@@ -169,8 +179,10 @@ public class BluetoothService extends Service implements BluetoothListener, Obse
     public void onSerialRead(byte[] data) {
         if(connected) {
             synchronized (this) {
-                mainLooper.post(() -> receive(data));
-                notifyObservers();
+                mainLooper.post(() -> {
+                    receive(data);
+                    notifyObservers();
+                });
             }
         }
     }
@@ -188,8 +200,9 @@ public class BluetoothService extends Service implements BluetoothListener, Obse
     }
 
     private void receive(byte[] data) {
-//        Log.i("TAG", new String(data));
         appendMessage(new String(data));
+        handleCommands(commandsCache.toString());
+        commandsCache = new StringBuilder(Objects.requireNonNull(CommandUtils.removeCommandFromExp(commandsCache.toString())));
     }
 
     private void status(String str) {
@@ -207,5 +220,69 @@ public class BluetoothService extends Service implements BluetoothListener, Obse
             commandsCache.append(message);
         }
         Log.i("TAG", commandsCache.toString());
+    }
+
+    private void handleCommands(String command) {
+        if (command == null)
+            return;
+
+        String welcomeCommand = CommandUtils.getStringFromExp(command, Commands.DEVICE_HI, 0);
+        if (Commands.DEVICE_HI_CLR.equals(welcomeCommand)) {
+            send(Commands.APP_HI);
+        }
+
+        String t1Name = CommandUtils.getStringFromExp(command, Commands.TEMP_1_NAME, 1);
+        if (t1Name != null) {
+            temperature1.setName(t1Name);
+        }
+
+        Double temp1 = CommandUtils.getDoubleFromExp(command, Commands.TEMP_1_VALUE, 1);
+        if (temp1 != null) {
+            temperature1.setTemp(temp1);
+        }
+
+        Double t1Min = CommandUtils.getDoubleFromExp(command, Commands.TEMP_1_MIN_VALUE, 1);
+        if (t1Min != null) {
+            temperature1.setTempMin(t1Min);
+        }
+
+        Double t1Max = CommandUtils.getDoubleFromExp(command, Commands.TEMP_1_MAX_VALUE, 1);
+        if (t1Max != null) {
+            temperature1.setTempMax(t1Max);
+        }
+
+        String t2Name = CommandUtils.getStringFromExp(command, Commands.TEMP_2_NAME, 1);
+        if (t2Name != null) {
+            temperature2.setName(t2Name);
+        }
+
+        Double temp2 = CommandUtils.getDoubleFromExp(command, Commands.TEMP_2_VALUE, 1);
+        if (temp2 != null) {
+            temperature2.setTemp(temp2);
+        }
+
+        Double t2Min = CommandUtils.getDoubleFromExp(command, Commands.TEMP_2_MIN_VALUE, 1);
+        if (t2Min != null) {
+            temperature2.setTempMin(t2Min);
+        }
+
+        Double t2Max = CommandUtils.getDoubleFromExp(command, Commands.TEMP_2_MAX_VALUE, 1);
+        if (t2Max != null) {
+            temperature2.setTempMax(t2Max);
+        }
+
+//        String alarmUp = CommandUtils.getStringFromExp(command, Commands.ALARM_UP, 0);
+//        if (alarmUp != null && isAfterDelay) {
+//            startAlarm();
+//            broadcastUpdate(ACTION_ALARM_RINGING);
+//        }
+    }
+
+    public Temperature getTemperature1() {
+        return temperature1;
+    }
+
+    public Temperature getTemperature2() {
+        return temperature2;
     }
 }

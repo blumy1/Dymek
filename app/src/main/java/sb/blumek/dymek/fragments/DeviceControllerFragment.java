@@ -20,17 +20,25 @@ import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import sb.blumek.dymek.R;
 import sb.blumek.dymek.observables.Observable;
 import sb.blumek.dymek.observables.Observer;
 import sb.blumek.dymek.services.BluetoothService;
+import sb.blumek.dymek.shared.Temperature;
 
 public class DeviceControllerFragment extends Fragment implements ServiceConnection, Observer {
     public final static String TAG = ScanDevicesFragment.class.getSimpleName();
 
     private String deviceName;
     private String deviceAddress;
+
+    private TextView temp1TV;
+    private TextView temp2TV;
+    private TextView temp1NameTV;
+    private TextView temp2NameTV;
+    private View separatorV;
 
     private BluetoothService service;
     private boolean initialStart = true;
@@ -43,7 +51,16 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
     @Override
     public void update(Observable observable) {
         if (observable instanceof BluetoothService) {
-            Log.i("TAG", "XAXAXAXAXAXAXAXAXA");
+            BluetoothService service = (BluetoothService) observable;
+
+            Temperature temp1 = service.getTemperature1();
+            Temperature temp2 = service.getTemperature2();
+
+            temp1NameTV.setText(temp1.getName());
+            temp1TV.setText(String.valueOf(temp1.getTemp()));
+
+            temp2NameTV.setText(temp2.getName());
+            temp2TV.setText(String.valueOf(temp2.getTemp()));
         }
     }
 
@@ -117,6 +134,16 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         return inflater.inflate(R.layout.fragment_device_controller, container, false);
+    }
+
+    @Override
+    public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
+        temp1TV = view.findViewById(R.id.temp1_tv);
+        temp2TV = view.findViewById(R.id.temp2_tv);
+        temp1NameTV = view.findViewById(R.id.temp1Name_tv);
+        temp2NameTV = view.findViewById(R.id.temp2Name_tv);
+        separatorV = view.findViewById(R.id.separator_v);
     }
 
     @Override
