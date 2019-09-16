@@ -33,7 +33,7 @@
             android:configChanges="orientation"
             android:name=".activities.MainActivity"
             android:theme="@style/AppTheme.NoActionBar"/>
-        <service android:name=".services.BluetoothService"/>
+        <service android:name=".services.TemperatureService"/>
     </application>
 
 </manifest>

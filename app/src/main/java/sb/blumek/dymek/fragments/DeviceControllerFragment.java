@@ -7,12 +7,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.fragment.app.Fragment;
-
 import android.os.IBinder;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -21,14 +17,23 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
 
 import sb.blumek.dymek.R;
+import sb.blumek.dymek.activities.MainActivity;
+import sb.blumek.dymek.listeners.ConnectionListener;
 import sb.blumek.dymek.observables.Observable;
 import sb.blumek.dymek.observables.Observer;
-import sb.blumek.dymek.services.BluetoothService;
+import sb.blumek.dymek.services.TemperatureService;
+import sb.blumek.dymek.shared.Commands;
 import sb.blumek.dymek.shared.Temperature;
 
-public class DeviceControllerFragment extends Fragment implements ServiceConnection, Observer {
+public class DeviceControllerFragment extends Fragment implements ServiceConnection, Observer, ConnectionListener {
     public final static String TAG = ScanDevicesFragment.class.getSimpleName();
 
     private String deviceAddress;
@@ -40,18 +45,19 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
     private View separatorV;
     private Button alarmBTN;
     private TextView connectionStateTV;
+    private Menu menu;
 
-    private BluetoothService service;
+    private TemperatureService service;
     private boolean initialStart = true;
 
-    public DeviceControllerFragment(String deviceAddress) {
+    DeviceControllerFragment(String deviceAddress) {
         this.deviceAddress = deviceAddress;
     }
 
     @Override
     public void update(Observable observable) {
-        if (observable instanceof BluetoothService) {
-            BluetoothService service = (BluetoothService) observable;
+        if (observable instanceof TemperatureService) {
+            TemperatureService service = (TemperatureService) observable;
 
             Temperature temp1 = service.getTemperature1();
             Temperature temp2 = service.getTemperature2();
@@ -62,7 +68,7 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
             temp2NameTV.setText(temp2.getName());
             temp2TV.setText(String.valueOf(temp2.getTemp()));
 
-            setUpUI();
+            refreshUI();
         }
     }
 
@@ -73,64 +79,125 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
         setRetainInstance(true);
     }
 
+    private void showSettingsButton() {
+        if (getActivity() instanceof AppCompatActivity) {
+            ((MainActivity) getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+            ((MainActivity) getActivity()).getSupportActionBar().setHomeAsUpIndicator(getResources()
+                    .getDrawable(R.drawable.ic_settings_black));
+        }
+    }
+
+    private void hideSettingsButton() {
+        if (getActivity() instanceof AppCompatActivity) {
+            ((MainActivity) getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(false);
+        }
+    }
+
     @Override
     public void onDestroy() {
         if (service != null && !service.isDisconnected())
             disconnect();
-        getActivity().stopService(new Intent(getActivity(), BluetoothService.class));
+        getActivity().stopService(new Intent(getActivity(), TemperatureService.class));
         super.onDestroy();
     }
 
     @Override
     public void onStart() {
         super.onStart();
+        showSettingsButton();
         if(service == null)
-            getActivity().startService(new Intent(getActivity(), BluetoothService.class)); // prevents service destroy on unbind from recreated activity caused by orientation change
+            getActivity().startService(new Intent(getActivity(), TemperatureService.class));
     }
 
-    @Override
-    public void onStop() {
-//        if(service != null && !getActivity().isChangingConfigurations())
-//            service.detach();
-        super.onStop();
-    }
-
-    @SuppressWarnings("deprecation") // onAttach(context) was added with API 23. onAttach(activity) works for all API versions
+    @SuppressWarnings("deprecation")
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-        getActivity().bindService(new Intent(getActivity(), BluetoothService.class), this, Context.BIND_AUTO_CREATE);
+        getActivity().bindService(new Intent(getActivity(), TemperatureService.class), this, Context.BIND_AUTO_CREATE);
     }
 
     @Override
     public void onDetach() {
-        try { getActivity().unbindService(this); } catch(Exception ignored) {}
+        try {
+            getActivity().unbindService(this);
+        } catch(Exception ignored) {}
         super.onDetach();
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        if(initialStart && service !=null) {
+        Log.i(TAG, "ON RESUME");
+        showSettingsButton();
+        refreshUI();
+
+        if(initialStart && service != null) {
             initialStart = false;
             getActivity().runOnUiThread(this::connect);
         }
     }
 
+    private void refreshUI() {
+        setUpUI();
+        setConnectionState();
+        setUpMenu();
+    }
+
+    private void setConnectionState() {
+        if (isServiceConnected()) {
+            setStateAsConnected();
+        } else if (isServiceConnecting()) {
+            setStateAsConnecting();
+        } else {
+            setStateAsDisconnected();
+        }
+    }
+
+    private void setStateAsDisconnected() {
+        connectionStateTV.setText(R.string.disconnected);
+    }
+
+    private void setStateAsConnecting() {
+        connectionStateTV.setText(R.string.connecting);
+    }
+
+    private void setStateAsConnected() {
+        connectionStateTV.setText(R.string.connected);
+    }
+
+    private void setUpUI() {
+        if (isServiceConnected())
+            setIsConnectedUI();
+        else if (isServiceConnecting())
+            setIsConnectingUI();
+        else
+            setIsConnectedUI();
+    }
+
+    private boolean isServiceConnected() {
+        return service != null && service.isConnected();
+    }
+
+    private boolean isServiceConnecting() {
+        return service != null && service.isConnecting();
+    }
+
     @Override
     public void onServiceConnected(ComponentName name, IBinder binder) {
-        service = ((BluetoothService.ServiceBinder) binder).getService();
+        service = ((TemperatureService.ServiceBinder) binder).getService();
         if(initialStart && isResumed()) {
             initialStart = false;
             service.registerObserver(this);
             service.setDeviceAddress(deviceAddress);
+            service.setConnectionListener(this);
             getActivity().runOnUiThread(this::connect);
-            setUpUI();
+            refreshUI();
         }
     }
 
     @Override
     public void onServiceDisconnected(ComponentName name) {
+        service.setConnectionListener(null);
         service = null;
     }
 
@@ -149,18 +216,50 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
         separatorV = view.findViewById(R.id.separator_v);
         alarmBTN = view.findViewById(R.id.change_state_btn);
         connectionStateTV = view.findViewById(R.id.connection_state);
+
+        temp1TV.setOnClickListener(v -> {
+            service.send(String.format(Commands.SET_TEMP_1_NAME, temp1TV.getText().toString()));
+            Toast.makeText(getActivity(), "SENT", Toast.LENGTH_SHORT).show();
+        });
     }
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.controller_menu, menu);
-        if (service != null &&
-                service.isConnected()) {
-            menu.findItem(R.id.menu_connect).setVisible(false);
-            menu.findItem(R.id.menu_disconnect).setVisible(true);
+        this.menu = menu;
+        setMenuOptions();
+    }
+
+    private void setMenuOptions() {
+        if (isServiceConnected()) {
+            showDisconnectButton();
+        } else if (isServiceConnecting()){
+            showConnectingProgress();
         } else {
+            showConnectButton();
+        }
+    }
+
+    private void showConnectingProgress() {
+        if (menu != null) {
+            menu.findItem(R.id.menu_connect).setVisible(false);
+            menu.findItem(R.id.menu_disconnect).setVisible(false);
+            menu.findItem(R.id.menu_refresh).setActionView(
+                    R.layout.actionbar_progress_bar);
+        }
+    }
+
+    private void showConnectButton() {
+        if (menu != null) {
             menu.findItem(R.id.menu_connect).setVisible(true);
             menu.findItem(R.id.menu_disconnect).setVisible(false);
+        }
+    }
+
+    private void showDisconnectButton() {
+        if (menu != null) {
+            menu.findItem(R.id.menu_connect).setVisible(false);
+            menu.findItem(R.id.menu_disconnect).setVisible(true);
         }
     }
 
@@ -177,23 +276,28 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
             case R.id.menu_disconnect:
                 disconnect();
                 return true;
+            case android.R.id.home:
+                openSettings();
+                return true;
         }
+
         return super.onOptionsItemSelected(item);
+    }
+
+    private void openSettings() {
+        getActivity().getSupportFragmentManager().beginTransaction()
+                .add(R.id.fragment, new DeviceSettingsFragment(), DeviceSettingsFragment.TAG)
+                .addToBackStack(null)
+                .commit();
     }
 
     private void disconnect() {
         service.disconnect();
-        setUpUI();
-        refreshActionBarMenu();
     }
 
-    private void refreshActionBarMenu() {
+    private void setUpMenu() {
         if (getActivity() != null)
             getActivity().invalidateOptionsMenu();
-    }
-
-    private void send(String message) {
-        service.send(message);
     }
 
     private void hideUI() {
@@ -214,26 +318,48 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
         alarmBTN.setVisibility(View.VISIBLE);
     }
 
-    public void disableAlarmButton() {
+    private void disableAlarmButton() {
         alarmBTN.setEnabled(false);
         alarmBTN.setBackground(getResources().getDrawable(R.drawable.rounded_outline_button_disabled));
         alarmBTN.setTextColor(getResources().getColor(R.color.colorPrimaryLight));
     }
 
-    public void enableAlarmButton() {
+    private void enableAlarmButton() {
         alarmBTN.setEnabled(true);
         alarmBTN.setBackground(getResources().getDrawable(R.drawable.rounded_outline_button));
         alarmBTN.setTextColor(getResources().getColor(R.color.colorAccent));
     }
 
-    private void setUpUI() {
-        refreshActionBarMenu();
-        if (service.isConnected()) {
-            showUI();
-            connectionStateTV.setText(R.string.connected);
-        } else if (service.isDisconnected()) {
-            hideUI();
-            connectionStateTV.setText(R.string.disconnected);
-        }
+    private void setIsConnectedUI() {
+        setStateAsConnected();
+        showUI();
+        showDisconnectButton();
+    }
+
+    private void setIsConnectingUI() {
+        setStateAsConnecting();
+        hideUI();
+        showConnectingProgress();
+    }
+
+    private void setIsDisconnectedUI() {
+        setStateAsDisconnected();
+        hideUI();
+        showConnectButton();
+    }
+
+    @Override
+    public void onConnect() {
+        setIsConnectedUI();
+    }
+
+    @Override
+    public void onConnecting() {
+        setIsConnectingUI();
+    }
+
+    @Override
+    public void onDisconnect() {
+        setIsDisconnectedUI();
     }
 }

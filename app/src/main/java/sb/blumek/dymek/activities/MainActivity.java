@@ -24,5 +24,4 @@ public class MainActivity extends AppCompatActivity {
                 .add(R.id.fragment, new ScanDevicesFragment(), ScanDevicesFragment.TAG)
                 .commit();
     }
-
 }

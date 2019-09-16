@@ -27,6 +27,7 @@ import java.util.Objects;
 
 import sb.blumek.dymek.R;
 import sb.blumek.dymek.listeners.BluetoothListener;
+import sb.blumek.dymek.listeners.ConnectionListener;
 import sb.blumek.dymek.observables.Observable;
 import sb.blumek.dymek.shared.Commands;
 import sb.blumek.dymek.shared.Constants;
@@ -34,32 +35,34 @@ import sb.blumek.dymek.shared.Temperature;
 import sb.blumek.dymek.sockets.BluetoothSocket;
 import sb.blumek.dymek.utils.CommandUtils;
 
-public class BluetoothService extends Service implements BluetoothListener, Observable {
+public class TemperatureService extends Service implements BluetoothListener, Observable {
 
     public class ServiceBinder extends Binder {
-        public BluetoothService getService() { return BluetoothService.this; }
+        public TemperatureService getService() {
+            return TemperatureService.this;
+        }
     }
 
     private enum ConnectionState {
         NotConnected,
         Pending,
-        Authorizing,
-        Connected}
+        Connected
+    }
 
     private final Handler mainLooper;
     private final IBinder binder;
+    private ConnectionListener connectionListener;
 
     private boolean connected;
     private StringBuilder commandsCache;
     private ConnectionState connectionState;
     private String deviceAddress;
     private BluetoothSocket socket;
-    private String notificationMsg;
 
     Temperature temperature1 = new Temperature();
     Temperature temperature2 = new Temperature();
 
-    public BluetoothService() {
+    public TemperatureService() {
         mainLooper = new Handler(Looper.getMainLooper());
         binder = new ServiceBinder();
         commandsCache = new StringBuilder();
@@ -69,7 +72,6 @@ public class BluetoothService extends Service implements BluetoothListener, Obse
 
     @Override
     public void onDestroy() {
-        cancelNotification();
         disconnect();
         super.onDestroy();
     }
@@ -86,12 +88,15 @@ public class BluetoothService extends Service implements BluetoothListener, Obse
             BluetoothDevice device = bluetoothAdapter.getRemoteDevice(deviceAddress);
             status("connecting...");
             connectionState = ConnectionState.Pending;
+            if (isAvailableConnectionListener()) {
+                connectionListener.onConnecting();
+            }
             socket = new BluetoothSocket();
             connected = true;
             connectionState = ConnectionState.Connected;
             socket.connect(getApplicationContext(), this, device);
         } catch (Exception e) {
-            onSerialConnectError(e);
+            onConnectError(e);
         }
     }
 
@@ -100,7 +105,9 @@ public class BluetoothService extends Service implements BluetoothListener, Obse
         socket.disconnect();
         socket = null;
         connected = false;
-        notificationMsg = null;
+
+        if (isAvailableConnectionListener())
+            connectionListener.onDisconnect();
     }
 
     public void send(String str) {
@@ -113,9 +120,10 @@ public class BluetoothService extends Service implements BluetoothListener, Obse
             spn.setSpan(new ForegroundColorSpan(getResources().getColor(R.color.colorAccent)), 0, spn.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
             String newline = "\r\n";
             byte[] data = (str + newline).getBytes();
+            System.out.println("WRITING...");
             socket.write(data);
         } catch (Exception e) {
-            onSerialIoError(e);
+            onIoError(e);
         }
     }
 
@@ -123,66 +131,46 @@ public class BluetoothService extends Service implements BluetoothListener, Obse
         return connectionState == ConnectionState.Connected;
     }
 
+    public boolean isConnecting() {
+        return connectionState == ConnectionState.Pending;
+    }
+
     public boolean isDisconnected() {
         return connectionState == ConnectionState.NotConnected;
     }
 
-    private void createNotification() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel nc = new NotificationChannel(Constants.NOTIFICATION_CHANNEL, "Background service", NotificationManager.IMPORTANCE_LOW);
-            nc.setShowBadge(false);
-            NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-            nm.createNotificationChannel(nc);
-        }
-        Intent disconnectIntent = new Intent()
-                .setAction(Constants.INTENT_ACTION_DISCONNECT);
-        Intent restartIntent = new Intent()
-                .setClassName(this, Constants.INTENT_CLASS_MAIN_ACTIVITY)
-                .setAction(Intent.ACTION_MAIN)
-                .addCategory(Intent.CATEGORY_LAUNCHER);
-        PendingIntent disconnectPendingIntent = PendingIntent.getBroadcast(this, 1, disconnectIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        PendingIntent restartPendingIntent = PendingIntent.getActivity(this, 1, restartIntent,  PendingIntent.FLAG_UPDATE_CURRENT);
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, Constants.NOTIFICATION_CHANNEL)
-                .setSmallIcon(R.drawable.ic_icon)
-                .setColor(getResources().getColor(R.color.colorPrimary))
-                .setContentTitle(getResources().getString(R.string.app_name))
-                .setContentText(notificationMsg)
-                .setContentIntent(restartPendingIntent)
-                .setOngoing(true)
-                .addAction(new NotificationCompat.Action(R.drawable.ic_icon, "Disconnect", disconnectPendingIntent));
-        Notification notification = builder.build();
-        startForeground(Constants.NOTIFY_MANAGER_START_FOREGROUND_SERVICE, notification);
-    }
-
-    private void cancelNotification() {
-        stopForeground(true);
-    }
-
     @Override
-    public void onSerialConnect() {
+    public void onConnect() {
         if(connected) {
             synchronized (this) {
-                mainLooper.post(() -> {
-
-                });
+                if (isAvailableConnectionListener()) {
+                    mainLooper.post(() -> connectionListener.onConnect());
+                }
             }
         }
     }
 
+    private boolean isAvailableConnectionListener() {
+        return connectionListener != null;
+    }
+
     @Override
-    public void onSerialConnectError(Exception e) {
+    public void onConnectError(Exception e) {
         if(connected) {
             synchronized (this) {
                 mainLooper.post(() -> {
-                    cancelNotification();
                     disconnect();
+
+                    if (isAvailableConnectionListener()) {
+                        connectionListener.onDisconnect();
+                    }
                 });
             }
         }
     }
 
     @Override
-    public void onSerialRead(byte[] data) {
+    public void onRead(byte[] data) {
         if(connected) {
             synchronized (this) {
                 mainLooper.post(() -> {
@@ -195,12 +183,15 @@ public class BluetoothService extends Service implements BluetoothListener, Obse
     }
 
     @Override
-    public void onSerialIoError(Exception e) {
+    public void onIoError(Exception e) {
         if(connected) {
             synchronized (this) {
                 mainLooper.post(() -> {
-                    cancelNotification();
                     disconnect();
+
+                    if (isAvailableConnectionListener()) {
+                        connectionListener.onDisconnect();
+                    }
                 });
             }
         }
@@ -210,14 +201,18 @@ public class BluetoothService extends Service implements BluetoothListener, Obse
         appendMessage(new String(data));
     }
 
-    private void status(String str) {
-        SpannableStringBuilder spn = new SpannableStringBuilder(str+'\n');
+    private void status(String status) {
+        SpannableStringBuilder spn = new SpannableStringBuilder(status + '\n');
         spn.setSpan(new ForegroundColorSpan(getResources().getColor(R.color.colorAccent)), 0, spn.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         Log.i("TAG", spn.toString());
     }
 
     public void setDeviceAddress(String deviceAddress) {
         this.deviceAddress = deviceAddress;
+    }
+
+    public void setConnectionListener(ConnectionListener connectionListener) {
+        this.connectionListener = connectionListener;
     }
 
     private void appendMessage(String message) {
