@@ -26,6 +26,7 @@ import androidx.fragment.app.Fragment;
 
 import sb.blumek.dymek.R;
 import sb.blumek.dymek.activities.MainActivity;
+import sb.blumek.dymek.listeners.AlarmListener;
 import sb.blumek.dymek.listeners.ConnectionListener;
 import sb.blumek.dymek.observables.Observable;
 import sb.blumek.dymek.observables.Observer;
@@ -33,7 +34,7 @@ import sb.blumek.dymek.services.TemperatureService;
 import sb.blumek.dymek.shared.Commands;
 import sb.blumek.dymek.shared.Temperature;
 
-public class DeviceControllerFragment extends Fragment implements ServiceConnection, Observer, ConnectionListener {
+public class DeviceControllerFragment extends Fragment implements ServiceConnection, Observer, ConnectionListener, AlarmListener {
     public final static String TAG = ScanDevicesFragment.class.getSimpleName();
 
     private String deviceAddress;
@@ -171,7 +172,7 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
         else if (isServiceConnecting())
             setIsConnectingUI();
         else
-            setIsConnectedUI();
+            setIsDisconnectedUI();
     }
 
     private boolean isServiceConnected() {
@@ -185,11 +186,12 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
     @Override
     public void onServiceConnected(ComponentName name, IBinder binder) {
         service = ((TemperatureService.ServiceBinder) binder).getService();
+        service.registerObserver(this);
+        service.setDeviceAddress(deviceAddress);
+        service.setConnectionListener(this);
+        service.setAlarmListener(this);
         if(initialStart && isResumed()) {
             initialStart = false;
-            service.registerObserver(this);
-            service.setDeviceAddress(deviceAddress);
-            service.setConnectionListener(this);
             getActivity().runOnUiThread(this::connect);
             refreshUI();
         }
@@ -198,6 +200,7 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
     @Override
     public void onServiceDisconnected(ComponentName name) {
         service.setConnectionListener(null);
+        service.unregisterObserver(this);
         service = null;
     }
 
@@ -215,6 +218,8 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
         temp2NameTV = view.findViewById(R.id.temp2Name_tv);
         separatorV = view.findViewById(R.id.separator_v);
         alarmBTN = view.findViewById(R.id.change_state_btn);
+        disableAlarmButton();
+
         connectionStateTV = view.findViewById(R.id.connection_state);
 
         temp1TV.setOnClickListener(v -> {
@@ -253,6 +258,7 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
         if (menu != null) {
             menu.findItem(R.id.menu_connect).setVisible(true);
             menu.findItem(R.id.menu_disconnect).setVisible(false);
+            menu.findItem(R.id.menu_refresh).setActionView(null);
         }
     }
 
@@ -260,6 +266,7 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
         if (menu != null) {
             menu.findItem(R.id.menu_connect).setVisible(false);
             menu.findItem(R.id.menu_disconnect).setVisible(true);
+            menu.findItem(R.id.menu_refresh).setActionView(null);
         }
     }
 
@@ -361,5 +368,15 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
     @Override
     public void onDisconnect() {
         setIsDisconnectedUI();
+    }
+
+    @Override
+    public void alarmActivated() {
+        enableAlarmButton();
+    }
+
+    @Override
+    public void alarmDeactivated() {
+        disableAlarmButton();
     }
 }

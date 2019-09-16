@@ -1,16 +1,10 @@
 package sb.blumek.dymek.services;
 
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
-import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -21,16 +15,15 @@ import android.util.Log;
 import android.widget.Toast;
 
 import androidx.annotation.Nullable;
-import androidx.core.app.NotificationCompat;
 
 import java.util.Objects;
 
 import sb.blumek.dymek.R;
+import sb.blumek.dymek.listeners.AlarmListener;
 import sb.blumek.dymek.listeners.BluetoothListener;
 import sb.blumek.dymek.listeners.ConnectionListener;
 import sb.blumek.dymek.observables.Observable;
 import sb.blumek.dymek.shared.Commands;
-import sb.blumek.dymek.shared.Constants;
 import sb.blumek.dymek.shared.Temperature;
 import sb.blumek.dymek.sockets.BluetoothSocket;
 import sb.blumek.dymek.utils.CommandUtils;
@@ -52,6 +45,7 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
     private final Handler mainLooper;
     private final IBinder binder;
     private ConnectionListener connectionListener;
+    private AlarmListener alarmListener;
 
     private boolean connected;
     private StringBuilder commandsCache;
@@ -61,6 +55,10 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
 
     Temperature temperature1 = new Temperature();
     Temperature temperature2 = new Temperature();
+
+    public ConnectionState getConnectionState() {
+        return connectionState;
+    }
 
     public TemperatureService() {
         mainLooper = new Handler(Looper.getMainLooper());
@@ -215,6 +213,10 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
         this.connectionListener = connectionListener;
     }
 
+    public void setAlarmListener(AlarmListener alarmListener) {
+        this.alarmListener = alarmListener;
+    }
+
     private void appendMessage(String message) {
         if (message != null && !message.isEmpty()) {
             commandsCache.append(message);
@@ -237,11 +239,26 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
         handleTemp2MinCommand(command);
         handleTemp2MaxCommand(command);
 
-//        String alarmUp = CommandUtils.getStringFromExp(command, Commands.ALARM_UP, 0);
-//        if (alarmUp != null && isAfterDelay) {
-//            startAlarm();
-//            broadcastUpdate(ACTION_ALARM_RINGING);
-//        }
+        handleAlarmUpCommand(command);
+        handleAlarmDownCommand(command);
+    }
+
+    private void handleAlarmUpCommand(String command) {
+        String alarmUp = CommandUtils.getStringFromExp(command, Commands.ALARM_UP, 0);
+        if (alarmUp != null && isAvailableAlarmListener()) {
+            alarmListener.alarmActivated();
+        }
+    }
+
+    private void handleAlarmDownCommand(String command) {
+        String alarmDown = CommandUtils.getStringFromExp(command, Commands.ALARM_DOWN, 0);
+        if (alarmDown != null && isAvailableAlarmListener()) {
+            alarmListener.alarmDeactivated();
+        }
+    }
+
+    private boolean isAvailableAlarmListener() {
+        return alarmListener != null;
     }
 
     private void handleTemp2MaxCommand(String command) {
