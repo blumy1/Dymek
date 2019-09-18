@@ -100,7 +100,9 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
 
     public void disconnect() {
         connectionState = ConnectionState.NotConnected;
-        socket.disconnect();
+        if (socket != null)
+            socket.disconnect();
+
         socket = null;
         connected = false;
 

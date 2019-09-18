@@ -5,7 +5,6 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
@@ -16,7 +15,6 @@ import androidx.appcompat.app.ActionBar;
 import androidx.fragment.app.Fragment;
 
 import android.os.IBinder;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -24,7 +22,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.Toast;
 
 import sb.blumek.dymek.R;
 import sb.blumek.dymek.activities.MainActivity;
@@ -39,14 +36,14 @@ public class DeviceSettingsFragment extends Fragment implements ServiceConnectio
 
     private TemperatureService service;
 
-    private Button setBTN;
+    private Button sendSettingsButton;
     private EditText temp1MinET;
     private EditText temp1MaxET;
     private EditText temp2MinET;
     private EditText temp2MaxET;
     private EditText temp1NameET;
     private EditText temp2NameET;
-    private LinearLayout disconnectLL;
+    private LinearLayout disconnectButton;
 
     public DeviceSettingsFragment() {
     }
@@ -97,19 +94,14 @@ public class DeviceSettingsFragment extends Fragment implements ServiceConnectio
     @Override
     public void onStart() {
         super.onStart();
+        showBackButton();
         if(service == null)
             getActivity().startService(new Intent(getActivity(), TemperatureService.class));
     }
 
     @Override
-    public void onResume() {
-        super.onResume();
-        showBackButton();
-    }
-
-    @Override
-    public void onPause() {
-        super.onPause();
+    public void onStop() {
+        super.onStop();
         hideBackButton();
     }
 
@@ -123,11 +115,11 @@ public class DeviceSettingsFragment extends Fragment implements ServiceConnectio
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        setBTN = view.findViewById(R.id.set_btn);
-        setBTN.setOnClickListener(view12 -> sendSettings());
+        sendSettingsButton = view.findViewById(R.id.set_btn);
+        sendSettingsButton.setOnClickListener(view12 -> sendSettings());
 
-        disconnectLL = view.findViewById(R.id.disconnect_ll);
-        disconnectLL.setOnClickListener(view1 ->
+        disconnectButton = view.findViewById(R.id.disconnect_ll);
+        disconnectButton.setOnClickListener(view1 ->
                 new AlertDialog.Builder(view1.getContext(), AlertDialog.THEME_DEVICE_DEFAULT_DARK)
                 .setTitle("Czy na pewno?")
                 .setMessage("Próbujesz odłączyć urządzenie od aplikacji. Czy chcesz to na pewno zrobić?")

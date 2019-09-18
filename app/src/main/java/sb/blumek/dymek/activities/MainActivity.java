@@ -21,6 +21,7 @@ public class MainActivity extends AppCompatActivity {
 
         getSupportFragmentManager()
                 .beginTransaction()
+                .setCustomAnimations(R.anim.fade_in, R.anim.fade_out)
                 .add(R.id.fragment, new ScanDevicesFragment(), ScanDevicesFragment.TAG)
                 .commit();
     }

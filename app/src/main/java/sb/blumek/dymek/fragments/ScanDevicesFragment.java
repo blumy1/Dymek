@@ -249,8 +249,8 @@ public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnIt
         getActivity()
                 .getSupportFragmentManager()
                 .beginTransaction()
-                .replace(R.id.fragment,
-                        new DeviceControllerFragment(bluetoothDevice.getAddress()),
+                .setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left)
+                .replace(R.id.fragment, new DeviceControllerFragment(bluetoothDevice.getAddress()),
                         DeviceControllerFragment.TAG)
                 .commit();
     }
