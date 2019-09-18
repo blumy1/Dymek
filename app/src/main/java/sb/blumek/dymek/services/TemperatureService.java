@@ -53,19 +53,15 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
     private String deviceAddress;
     private BluetoothSocket socket;
 
-    Temperature temperature1 = new Temperature();
-    Temperature temperature2 = new Temperature();
-
-    public ConnectionState getConnectionState() {
-        return connectionState;
-    }
+    Temperature firstTemperature = new Temperature();
+    Temperature secondTemperature = new Temperature();
 
     public TemperatureService() {
         mainLooper = new Handler(Looper.getMainLooper());
         binder = new ServiceBinder();
         commandsCache = new StringBuilder();
-        temperature1.setName("Temp 1");
-        temperature2.setName("Temp 2");
+        firstTemperature.setName("Temp 1");
+        secondTemperature.setName("Temp 2");
     }
 
     @Override
@@ -266,56 +262,56 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
     private void handleTemp2MaxCommand(String command) {
         Double t2Max = CommandUtils.getDoubleFromExp(command, Commands.TEMP_2_MAX_VALUE, 1);
         if (t2Max != null) {
-            temperature2.setTempMax(t2Max);
+            secondTemperature.setTempMax(t2Max);
         }
     }
 
     private void handleTemp2MinCommand(String command) {
         Double t2Min = CommandUtils.getDoubleFromExp(command, Commands.TEMP_2_MIN_VALUE, 1);
         if (t2Min != null) {
-            temperature2.setTempMin(t2Min);
+            secondTemperature.setTempMin(t2Min);
         }
     }
 
     private void handleTemp2ValueCommand(String command) {
         Double temp2 = CommandUtils.getDoubleFromExp(command, Commands.TEMP_2_VALUE, 1);
         if (temp2 != null) {
-            temperature2.setTemp(temp2);
+            secondTemperature.setTemp(temp2);
         }
     }
 
     private void handleTemp2NameCommand(String command) {
         String t2Name = CommandUtils.getStringFromExp(command, Commands.TEMP_2_NAME, 1);
         if (t2Name != null) {
-            temperature2.setName(t2Name);
+            secondTemperature.setName(t2Name);
         }
     }
 
     private void handleTemp1MaxCommand(String command) {
         Double t1Max = CommandUtils.getDoubleFromExp(command, Commands.TEMP_1_MAX_VALUE, 1);
         if (t1Max != null) {
-            temperature1.setTempMax(t1Max);
+            firstTemperature.setTempMax(t1Max);
         }
     }
 
     private void handleTemp1MinCommand(String command) {
         Double t1Min = CommandUtils.getDoubleFromExp(command, Commands.TEMP_1_MIN_VALUE, 1);
         if (t1Min != null) {
-            temperature1.setTempMin(t1Min);
+            firstTemperature.setTempMin(t1Min);
         }
     }
 
     private void handleTemp1Value(String command) {
         Double temp1 = CommandUtils.getDoubleFromExp(command, Commands.TEMP_1_VALUE, 1);
         if (temp1 != null) {
-            temperature1.setTemp(temp1);
+            firstTemperature.setTemp(temp1);
         }
     }
 
     private void handleTemp1NameCommand(String command) {
         String t1Name = CommandUtils.getStringFromExp(command, Commands.TEMP_1_NAME, 1);
         if (t1Name != null) {
-            temperature1.setName(t1Name);
+            firstTemperature.setName(t1Name);
         }
     }
 
@@ -335,11 +331,11 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
         }
     }
 
-    public Temperature getTemperature1() {
-        return temperature1;
+    public Temperature getFirstTemperature() {
+        return firstTemperature;
     }
 
-    public Temperature getTemperature2() {
-        return temperature2;
+    public Temperature getSecondTemperature() {
+        return secondTemperature;
     }
 }

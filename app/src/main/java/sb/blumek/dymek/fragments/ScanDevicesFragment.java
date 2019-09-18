@@ -215,32 +215,38 @@ public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnIt
 
     @Override
     public void onItemClick(BluetoothDevice bluetoothDevice) {
-        if (bluetoothDevice != null && !bluetoothDevice
+        if (!isDymekDevice(bluetoothDevice))
+            confirmDeviceChoice(bluetoothDevice);
+        else
+            openDeviceController(bluetoothDevice);
+    }
+
+    private boolean isDymekDevice(BluetoothDevice bluetoothDevice) {
+        return bluetoothDevice != null && bluetoothDevice
                 .getName()
                 .toLowerCase()
                 .trim()
                 .equals(getResources()
                         .getString(R.string.app_name)
                         .toLowerCase()
-                        .trim())) {
+                        .trim());
+    }
 
-            new AlertDialog.Builder(getActivity(), AlertDialog.THEME_DEVICE_DEFAULT_DARK)
-                    .setTitle(getResources()
-                            .getString(R.string.are_you_sure))
-                    .setMessage(String.format(CORRECT_DEVICE_WARN, getResources()
-                            .getString(R.string.app_name)))
-                    .setPositiveButton(getResources()
-                            .getString(R.string.i_know_what_im_doing), (dialog, which) -> {
-                        openDeviceController(bluetoothDevice);
-                    })
-                    .setNegativeButton(getResources()
-                            .getString(R.string.i_want_to_change_selection), (dialog, which) ->
-                            Log.w(TAG, "The user gives up the selection."))
-                    .setIcon(android.R.drawable.ic_dialog_alert)
-                    .show();
-
-        } else if (bluetoothDevice != null)
-            openDeviceController(bluetoothDevice);
+    private void confirmDeviceChoice(BluetoothDevice bluetoothDevice) {
+        new AlertDialog.Builder(getActivity(), AlertDialog.THEME_DEVICE_DEFAULT_DARK)
+                .setTitle(getResources()
+                        .getString(R.string.are_you_sure))
+                .setMessage(String.format(CORRECT_DEVICE_WARN, getResources()
+                        .getString(R.string.app_name)))
+                .setPositiveButton(getResources()
+                        .getString(R.string.i_know_what_im_doing), (dialog, which) -> {
+                    openDeviceController(bluetoothDevice);
+                })
+                .setNegativeButton(getResources()
+                        .getString(R.string.i_want_to_change_selection), (dialog, which) ->
+                        Log.w(TAG, "The user gives up the selection."))
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .show();
     }
 
     private void openDeviceController(BluetoothDevice bluetoothDevice) {
@@ -248,6 +254,11 @@ public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnIt
             stopScanningDevices();
         }
 
+        openDeviceControllerFragment(bluetoothDevice);
+        saveDevice(bluetoothDevice);
+    }
+
+    private void openDeviceControllerFragment(BluetoothDevice bluetoothDevice) {
         getActivity()
                 .getSupportFragmentManager()
                 .beginTransaction()
@@ -255,7 +266,9 @@ public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnIt
                 .replace(R.id.fragment, new DeviceControllerFragment(bluetoothDevice.getAddress()),
                         DeviceControllerFragment.TAG)
                 .commit();
+    }
 
+    private void saveDevice(BluetoothDevice bluetoothDevice) {
         DeviceStorage deviceStorage = new DeviceStorage(getContext());
         deviceStorage.saveDevice(new Device(bluetoothDevice.getName(), bluetoothDevice.getAddress()));
     }

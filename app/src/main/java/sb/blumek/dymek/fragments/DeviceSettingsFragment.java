@@ -23,6 +23,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
 
+import java.util.Locale;
+
 import sb.blumek.dymek.R;
 import sb.blumek.dymek.activities.MainActivity;
 import sb.blumek.dymek.observables.Observable;
@@ -54,8 +56,8 @@ public class DeviceSettingsFragment extends Fragment implements ServiceConnectio
         if (observable instanceof TemperatureService) {
             TemperatureService service = (TemperatureService) observable;
 
-            Temperature temp1 = service.getTemperature1();
-            Temperature temp2 = service.getTemperature2();
+            Temperature temp1 = service.getFirstTemperature();
+            Temperature temp2 = service.getSecondTemperature();
         }
     }
 
@@ -170,7 +172,21 @@ public class DeviceSettingsFragment extends Fragment implements ServiceConnectio
     }
 
     private void sendSettings() {
-        service.send(String.format(Commands.SET_TEMP_2_NAME, temp2NameET.getText().toString()));
+        send(String.format(Commands.SET_TEMP_1_NAME, temp1NameET.getText().toString()));
+        send(String.format(Locale.GERMANY, Commands.SET_TEMP_1_MIN, Double.valueOf(temp1MinET.getText().toString())));
+        send(String.format(Locale.GERMANY, Commands.SET_TEMP_1_MAX, Double.valueOf(temp1MaxET.getText().toString())));
+        send(String.format(Commands.SET_TEMP_2_NAME, temp2NameET.getText().toString()));
+        send(String.format(Locale.GERMANY, Commands.SET_TEMP_2_MIN, Double.valueOf(temp2MinET.getText().toString())));
+        send(String.format(Locale.GERMANY, Commands.SET_TEMP_2_MAX, Double.valueOf(temp2MaxET.getText().toString())));
+    }
+
+    private void send(String message) {
+        if (isServiceConnected())
+        service.send(message);
+    }
+
+    private boolean isServiceConnected() {
+        return service != null && service.isConnected();
     }
 
     private void showBackButton() {
@@ -200,6 +216,11 @@ public class DeviceSettingsFragment extends Fragment implements ServiceConnectio
 
         getActionBar().setDisplayHomeAsUpEnabled(false);
     }
+
+//    @Override
+//    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+//        inflater.inflate(R.menu.settings_menu, menu);
+//    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {

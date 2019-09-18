@@ -6,22 +6,16 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.view.animation.AlphaAnimation;
-import android.view.animation.Animation;
-import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -35,7 +29,6 @@ import sb.blumek.dymek.listeners.ConnectionListener;
 import sb.blumek.dymek.observables.Observable;
 import sb.blumek.dymek.observables.Observer;
 import sb.blumek.dymek.services.TemperatureService;
-import sb.blumek.dymek.shared.Commands;
 import sb.blumek.dymek.shared.Temperature;
 
 public class DeviceControllerFragment extends Fragment implements ServiceConnection, Observer, ConnectionListener, AlarmListener {
@@ -64,8 +57,8 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
         if (observable instanceof TemperatureService) {
             TemperatureService service = (TemperatureService) observable;
 
-            Temperature temp1 = service.getTemperature1();
-            Temperature temp2 = service.getTemperature2();
+            Temperature temp1 = service.getFirstTemperature();
+            Temperature temp2 = service.getSecondTemperature();
 
             temp1NameTV.setText(temp1.getName());
             temp1TV.setText(String.valueOf(temp1.getTemp()));
@@ -241,7 +234,7 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
         temp2NameTV = view.findViewById(R.id.temp2Name_tv);
         separatorV = view.findViewById(R.id.separator_v);
         alarmBTN = view.findViewById(R.id.change_state_btn);
-//        disableAlarmButton();
+        disableAlarmButton();
 
         connectionStateTV = view.findViewById(R.id.connection_state);
     }
@@ -397,7 +390,7 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
 
     @Override
     public void alarmDeactivated() {
-//        if (alarmBTN.isEnabled())
-//            disableAlarmButton();
+        if (alarmBTN.isEnabled())
+            disableAlarmButton();
     }
 }
