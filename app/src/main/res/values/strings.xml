@@ -49,9 +49,11 @@
     <string name="disconnect_device">Odłącz urządzenie</string>
     <string name="title_activity_main">MainActivity</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
     <string name="i_know_what_im_doing">Wiem co robię</string>
     <string name="i_want_to_change_selection">Chcę zmienić wybór</string>
+    <string name="you_re_trying_to_disconnect_device">Próbujesz odłączyć urządzenie od aplikacji. Czy chcesz to na pewno zrobić?</string>
     <string name="are_you_sure">Czy na pewno?</string>
+    <string name="yes">Tak</string>
+    <string name="no">Nie</string>
 </resources>

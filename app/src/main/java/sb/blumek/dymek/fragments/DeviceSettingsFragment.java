@@ -30,6 +30,7 @@ import sb.blumek.dymek.observables.Observer;
 import sb.blumek.dymek.services.TemperatureService;
 import sb.blumek.dymek.shared.Commands;
 import sb.blumek.dymek.shared.Temperature;
+import sb.blumek.dymek.storage.DeviceStorage;
 
 public class DeviceSettingsFragment extends Fragment implements ServiceConnection, Observer {
     public final static String TAG = DeviceSettingsFragment.class.getSimpleName();
@@ -116,21 +117,10 @@ public class DeviceSettingsFragment extends Fragment implements ServiceConnectio
         super.onViewCreated(view, savedInstanceState);
 
         sendSettingsButton = view.findViewById(R.id.set_btn);
-        sendSettingsButton.setOnClickListener(view12 -> sendSettings());
+        sendSettingsButton.setOnClickListener(button -> sendSettings());
 
         disconnectButton = view.findViewById(R.id.disconnect_ll);
-        disconnectButton.setOnClickListener(view1 ->
-                new AlertDialog.Builder(view1.getContext(), AlertDialog.THEME_DEVICE_DEFAULT_DARK)
-                .setTitle("Czy na pewno?")
-                .setMessage("Próbujesz odłączyć urządzenie od aplikacji. Czy chcesz to na pewno zrobić?")
-                .setPositiveButton("Tak", (dialog, which) -> {
-
-                })
-                .setNegativeButton("Nie", (dialog, which) -> {
-
-                })
-                .setIcon(android.R.drawable.ic_dialog_alert)
-                .show());
+        disconnectButton.setOnClickListener(button -> confirmDeviceDisconnect());
 
         temp1MinET = view.findViewById(R.id.temp1Min_et);
         temp1MaxET = view.findViewById(R.id.temp1Max_et);
@@ -138,6 +128,45 @@ public class DeviceSettingsFragment extends Fragment implements ServiceConnectio
         temp2MaxET = view.findViewById(R.id.temp2Max_et);
         temp1NameET = view.findViewById(R.id.temp1Name_et);
         temp2NameET = view.findViewById(R.id.temp2Name_et);
+    }
+
+    public void confirmDeviceDisconnect() {
+        new AlertDialog.Builder(disconnectButton.getContext(), AlertDialog.THEME_DEVICE_DEFAULT_DARK)
+                .setTitle(R.string.are_you_sure)
+                .setMessage(R.string.you_re_trying_to_disconnect_device)
+                .setPositiveButton(R.string.yes, (dialog, which) -> {
+                    disconnectDevice();
+                    disconnectFromService();
+                    clearBackStack();
+                    openScanDevices();
+                })
+                .setNegativeButton(R.string.no, (dialog, which) -> {
+
+                })
+                .setIcon(android.R.drawable.ic_dialog_alert)
+                .show();
+    }
+
+    private void clearBackStack() {
+        ((MainActivity) getActivity()).clearBackStack();
+    }
+
+    private void disconnectFromService() {
+        if (service != null)
+            service.disconnect();
+    }
+
+    private void openScanDevices() {
+        getActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .setCustomAnimations(R.anim.enter_from_left, R.anim.exit_to_right)
+                .replace(R.id.fragment, new ScanDevicesFragment(), ScanDevicesFragment.TAG)
+                .commit();
+    }
+
+    private void disconnectDevice() {
+        DeviceStorage deviceStorage = new DeviceStorage(getContext());
+        deviceStorage.deleteDevice();
     }
 
     private void sendSettings() {

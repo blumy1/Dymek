@@ -6,14 +6,19 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.graphics.PorterDuff;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -50,7 +55,7 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
     private TemperatureService service;
     private boolean initialStart = true;
 
-    DeviceControllerFragment(String deviceAddress) {
+    public DeviceControllerFragment(String deviceAddress) {
         this.deviceAddress = deviceAddress;
     }
 
@@ -236,14 +241,9 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
         temp2NameTV = view.findViewById(R.id.temp2Name_tv);
         separatorV = view.findViewById(R.id.separator_v);
         alarmBTN = view.findViewById(R.id.change_state_btn);
-        disableAlarmButton();
+//        disableAlarmButton();
 
         connectionStateTV = view.findViewById(R.id.connection_state);
-
-        temp1TV.setOnClickListener(v -> {
-            service.send(String.format(Commands.SET_TEMP_1_NAME, temp1TV.getText().toString()));
-            Toast.makeText(getActivity(), "SENT", Toast.LENGTH_SHORT).show();
-        });
     }
 
     @Override
@@ -397,6 +397,7 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
 
     @Override
     public void alarmDeactivated() {
-        disableAlarmButton();
+//        if (alarmBTN.isEnabled())
+//            disableAlarmButton();
     }
 }

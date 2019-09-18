@@ -31,6 +31,8 @@ import android.widget.Toast;
 
 import sb.blumek.dymek.R;
 import sb.blumek.dymek.adapters.DevicesAdapter;
+import sb.blumek.dymek.domain.Device;
+import sb.blumek.dymek.storage.DeviceStorage;
 
 public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnItemClickListener {
     public final static String TAG = ScanDevicesFragment.class.getSimpleName();
@@ -253,5 +255,8 @@ public class ScanDevicesFragment extends Fragment implements DevicesAdapter.OnIt
                 .replace(R.id.fragment, new DeviceControllerFragment(bluetoothDevice.getAddress()),
                         DeviceControllerFragment.TAG)
                 .commit();
+
+        DeviceStorage deviceStorage = new DeviceStorage(getContext());
+        deviceStorage.saveDevice(new Device(bluetoothDevice.getName(), bluetoothDevice.getAddress()));
     }
 }
