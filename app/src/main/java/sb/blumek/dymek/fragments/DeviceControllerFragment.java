@@ -8,6 +8,8 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.transition.Transition;
+import android.transition.TransitionInflater;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -21,8 +23,10 @@ import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentTransaction;
 
 import sb.blumek.dymek.R;
 import sb.blumek.dymek.activities.MainActivity;
@@ -68,8 +72,6 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
 
             temp2NameTV.setText(temp2.getName());
             temp2TV.setText(String.valueOf(temp2.getTemp()));
-
-            refreshUI();
         }
     }
 
@@ -81,17 +83,31 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
     }
 
     private void showSettingsButton() {
-        if (getActivity() instanceof AppCompatActivity) {
-            ((MainActivity) getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(true);
-            ((MainActivity) getActivity()).getSupportActionBar().setHomeAsUpIndicator(getResources()
-                    .getDrawable(R.drawable.ic_settings_black));
-        }
+        ActionBar actionBar = getActionBar();
+        if (!isAvailableActionBar(actionBar))
+            return;
+
+        actionBar.setDisplayHomeAsUpEnabled(true);
+        actionBar.setHomeAsUpIndicator(getResources()
+                .getDrawable(R.drawable.ic_settings_black));
+    }
+
+    private boolean isAvailableActionBar(ActionBar actionBar) {
+        return actionBar != null;
+    }
+
+    private ActionBar getActionBar() {
+        if (getActivity() == null)
+            return null;
+        return ((MainActivity) getActivity()).getSupportActionBar();
     }
 
     private void hideSettingsButton() {
-        if (getActivity() instanceof AppCompatActivity) {
-            ((MainActivity) getActivity()).getSupportActionBar().setDisplayHomeAsUpEnabled(false);
-        }
+        ActionBar actionBar = getActionBar();
+        if (!isAvailableActionBar(actionBar))
+            return;
+
+        getActionBar().setDisplayHomeAsUpEnabled(false);
     }
 
     @Override
@@ -105,7 +121,6 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
     @Override
     public void onStart() {
         super.onStart();
-        showSettingsButton();
         if(service == null)
             getActivity().startService(new Intent(getActivity(), TemperatureService.class));
     }
@@ -128,14 +143,21 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
     @Override
     public void onResume() {
         super.onResume();
-        Log.i(TAG, "ON RESUME");
         showSettingsButton();
+        setUpMenu();
         refreshUI();
 
         if(initialStart && service != null) {
             initialStart = false;
             getActivity().runOnUiThread(this::connect);
         }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        menu = null;
+        hideSettingsButton();
     }
 
     private void refreshUI() {
@@ -200,6 +222,7 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
     @Override
     public void onServiceDisconnected(ComponentName name) {
         service.setConnectionListener(null);
+        service.setAlarmListener(null);
         service.unregisterObserver(this);
         service = null;
     }
@@ -292,8 +315,10 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
     }
 
     private void openSettings() {
-        getActivity().getSupportFragmentManager().beginTransaction()
-                .add(R.id.fragment, new DeviceSettingsFragment(), DeviceSettingsFragment.TAG)
+        getActivity().getSupportFragmentManager()
+                .beginTransaction()
+                .setCustomAnimations(R.anim.enter_from_right, R.anim.exit_to_left, R.anim.enter_from_left, R.anim.exit_to_right)
+                .replace(R.id.fragment, new DeviceSettingsFragment(), DeviceSettingsFragment.TAG)
                 .addToBackStack(null)
                 .commit();
     }

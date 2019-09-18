@@ -168,8 +168,6 @@ public class BluetoothSocket extends BluetoothGattCallback {
             if (!gatt.discoverServices())
                 onConnectError(new IOException("discoverServices failed"));
         } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-            Log.i("TAG", "xDDDDD");
-
             if (connected)
                 onIoError(new IOException("gatt status " + status));
             else
