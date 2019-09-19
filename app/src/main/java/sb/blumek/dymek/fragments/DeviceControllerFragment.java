@@ -29,6 +29,7 @@ import sb.blumek.dymek.listeners.ConnectionListener;
 import sb.blumek.dymek.observables.Observable;
 import sb.blumek.dymek.observables.Observer;
 import sb.blumek.dymek.services.TemperatureService;
+import sb.blumek.dymek.shared.Commands;
 import sb.blumek.dymek.shared.Temperature;
 
 public class DeviceControllerFragment extends Fragment implements ServiceConnection, Observer, ConnectionListener, AlarmListener {
@@ -234,9 +235,17 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
         temp2NameTV = view.findViewById(R.id.temp2Name_tv);
         separatorV = view.findViewById(R.id.separator_v);
         alarmBTN = view.findViewById(R.id.change_state_btn);
+        alarmBTN.setOnClickListener(button -> turnOffAlarm());
         disableAlarmButton();
 
         connectionStateTV = view.findViewById(R.id.connection_state);
+    }
+
+    private void turnOffAlarm() {
+        if (service != null) {
+            service.send(Commands.OFF_ALARM);
+            service.send(Commands.OFF_ALARM);
+        }
     }
 
     @Override

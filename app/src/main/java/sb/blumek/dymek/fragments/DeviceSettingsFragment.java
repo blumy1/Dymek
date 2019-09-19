@@ -15,6 +15,7 @@ import androidx.appcompat.app.ActionBar;
 import androidx.fragment.app.Fragment;
 
 import android.os.IBinder;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -22,8 +23,6 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-
-import java.util.Locale;
 
 import sb.blumek.dymek.R;
 import sb.blumek.dymek.activities.MainActivity;
@@ -33,6 +32,10 @@ import sb.blumek.dymek.services.TemperatureService;
 import sb.blumek.dymek.shared.Commands;
 import sb.blumek.dymek.shared.Temperature;
 import sb.blumek.dymek.storage.DeviceStorage;
+import sb.blumek.dymek.validators.TempMaxValueValidator;
+import sb.blumek.dymek.validators.TempMinValueValidator;
+import sb.blumek.dymek.validators.TempNameValidator;
+import sb.blumek.dymek.validators.Validator;
 
 public class DeviceSettingsFragment extends Fragment implements ServiceConnection, Observer {
     public final static String TAG = DeviceSettingsFragment.class.getSimpleName();
@@ -172,17 +175,62 @@ public class DeviceSettingsFragment extends Fragment implements ServiceConnectio
     }
 
     private void sendSettings() {
-        send(String.format(Commands.SET_TEMP_1_NAME, temp1NameET.getText().toString()));
-        send(String.format(Locale.GERMANY, Commands.SET_TEMP_1_MIN, Double.valueOf(temp1MinET.getText().toString())));
-        send(String.format(Locale.GERMANY, Commands.SET_TEMP_1_MAX, Double.valueOf(temp1MaxET.getText().toString())));
-        send(String.format(Commands.SET_TEMP_2_NAME, temp2NameET.getText().toString()));
-        send(String.format(Locale.GERMANY, Commands.SET_TEMP_2_MIN, Double.valueOf(temp2MinET.getText().toString())));
-        send(String.format(Locale.GERMANY, Commands.SET_TEMP_2_MAX, Double.valueOf(temp2MaxET.getText().toString())));
+        new Thread(() -> {
+            int delay = 500;
+            try {
+                send("[]");
+                Thread.sleep(delay);
+                sendTempName(temp1NameET.getText().toString(), Commands.SET_TEMP_1_NAME);
+                Thread.sleep(delay);
+                sendTempMinValue(Double.valueOf(temp1MinET.getText().toString()), Commands.SET_TEMP_1_MIN);
+                Thread.sleep(delay);
+                sendTempMaxValue(Double.valueOf(temp1MaxET.getText().toString()), Commands.SET_TEMP_1_MAX);
+                Thread.sleep(delay);
+
+                sendTempName(temp2NameET.getText().toString(), Commands.SET_TEMP_2_NAME);
+                Thread.sleep(delay);
+                sendTempMinValue(Double.valueOf(temp2MinET.getText().toString()), Commands.SET_TEMP_2_MIN);
+                Thread.sleep(delay);
+                sendTempMaxValue(Double.valueOf(temp2MaxET.getText().toString()), Commands.SET_TEMP_2_MAX);
+                send("[]");
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+
+        }).start();
+    }
+
+    private void sendTempName(String tempName, String template) {
+        Validator validator = new TempNameValidator(tempName);
+        String command = interpolate(template, tempName);
+        sendValue(command, validator);
+    }
+
+    private void sendTempMinValue(double tempMin, String template) {
+        Validator validator = new TempMinValueValidator(tempMin);
+        String command = interpolate(template, String.valueOf(tempMin));
+        sendValue(command, validator);
+    }
+
+    private void sendTempMaxValue(double tempMax, String template) {
+        Validator validator = new TempMaxValueValidator(tempMax);
+        String command = interpolate(template, String.valueOf(tempMax));
+        sendValue(command, validator);
+    }
+
+    private void sendValue(String command, Validator validator) {
+        if (validator.isValid()) {
+            send(command);
+        }
+    }
+
+    private String interpolate(String template, String value) {
+        return String.format(template, value);
     }
 
     private void send(String message) {
         if (isServiceConnected())
-        service.send(message);
+            service.send(message);
     }
 
     private boolean isServiceConnected() {
@@ -216,11 +264,6 @@ public class DeviceSettingsFragment extends Fragment implements ServiceConnectio
 
         getActionBar().setDisplayHomeAsUpEnabled(false);
     }
-
-//    @Override
-//    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-//        inflater.inflate(R.menu.settings_menu, menu);
-//    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {

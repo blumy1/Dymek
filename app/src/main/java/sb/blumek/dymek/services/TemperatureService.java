@@ -16,6 +16,7 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 
+import java.io.IOException;
 import java.util.Objects;
 
 import sb.blumek.dymek.R;
@@ -29,6 +30,7 @@ import sb.blumek.dymek.sockets.BluetoothSocket;
 import sb.blumek.dymek.utils.CommandUtils;
 
 public class TemperatureService extends Service implements BluetoothListener, Observable {
+    private static final String TAG = TemperatureService.class.getSimpleName();
 
     public class ServiceBinder extends Binder {
         public TemperatureService getService() {
@@ -52,6 +54,9 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
     private ConnectionState connectionState;
     private String deviceAddress;
     private BluetoothSocket socket;
+
+    private final int authDelay = 5000;
+    private boolean afterAuthDelay = true;
 
     Temperature firstTemperature = new Temperature();
     Temperature secondTemperature = new Temperature();
@@ -106,20 +111,22 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
             connectionListener.onDisconnect();
     }
 
-    public void send(String str) {
+    public void send(String message) {
         if(!isConnected()) {
             Toast.makeText(getApplicationContext(), "not connected", Toast.LENGTH_SHORT).show();
             return;
         }
+
+        SpannableStringBuilder spn = new SpannableStringBuilder(message + '\n');
+        spn.setSpan(new ForegroundColorSpan(getResources().getColor(R.color.colorAccent)), 0, spn.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+        String newline = "\r\n";
+        byte[] data = (message + newline).getBytes();
+        Log.d(TAG, "WRITING...");
+
         try {
-            SpannableStringBuilder spn = new SpannableStringBuilder(str+'\n');
-            spn.setSpan(new ForegroundColorSpan(getResources().getColor(R.color.colorAccent)), 0, spn.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-            String newline = "\r\n";
-            byte[] data = (str + newline).getBytes();
-            System.out.println("WRITING...");
             socket.write(data);
-        } catch (Exception e) {
-            onIoError(e);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -317,8 +324,11 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
 
     private void handleAuthorizationCommand(String command) {
         String welcomeCommand = CommandUtils.getStringFromExp(command, Commands.DEVICE_HI, 0);
-        if (Commands.DEVICE_HI_CLR.equals(welcomeCommand)) {
+        if (Commands.DEVICE_HI_CLR.equals(welcomeCommand) && afterAuthDelay) {
             send(Commands.APP_HI);
+            afterAuthDelay = false;
+
+            new Handler().postDelayed(() -> afterAuthDelay = true, authDelay);
         }
     }
 
