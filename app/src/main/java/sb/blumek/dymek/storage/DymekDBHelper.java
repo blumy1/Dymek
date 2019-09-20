@@ -24,9 +24,11 @@ public class DymekDBHelper extends SQLiteOpenHelper {
         onUpgrade(db, oldVersion, newVersion);
     }
 
-    private static final String SQL_CREATE_ENTRIES =
-            DeviceSchema.SQL_CREATE_ENTRY + TemperaturesProfileSchema.SQL_CREATE_ENTRY;
+    private static final String SQL_CREATE_ENTRIES = DeviceSchema.SQL_CREATE_ENTRY +
+            TemperaturesProfileSchema.SQL_CREATE_ENTRY +
+            TemperatureCacheSchema.SQL_CREATE_ENTRY;
 
-    private static final String SQL_DELETE_ENTRIES =
-            DeviceSchema.SQL_DELETE_ENTRY + TemperaturesProfileSchema.SQL_DELETE_ENTRY;
+    private static final String SQL_DELETE_ENTRIES = DeviceSchema.SQL_DELETE_ENTRY +
+            TemperaturesProfileSchema.SQL_DELETE_ENTRY +
+            TemperatureCacheSchema.SQL_DELETE_ENTRY;
 }

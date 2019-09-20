@@ -58,6 +58,8 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
     private final int authDelay = 5000;
     private boolean afterAuthDelay = true;
 
+    private boolean isInitialStart = true;
+
     Temperature firstTemperature = new Temperature();
     Temperature secondTemperature = new Temperature();
 
@@ -207,7 +209,6 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
     private void status(String status) {
         SpannableStringBuilder spn = new SpannableStringBuilder(status + '\n');
         spn.setSpan(new ForegroundColorSpan(getResources().getColor(R.color.colorAccent)), 0, spn.length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-        Log.i("TAG", spn.toString());
     }
 
     public void setDeviceAddress(String deviceAddress) {
@@ -226,12 +227,13 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
         if (message != null && !message.isEmpty()) {
             commandsCache.append(message);
         }
-        Log.i("TAG", commandsCache.toString());
     }
 
     private void handleCommands(String command) {
         if (command == null)
             return;
+
+        Log.i(TAG, "Command - " + command);
 
         handleAuthorizationCommand(command);
         handleTemp1NameCommand(command);
@@ -309,6 +311,11 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
     }
 
     private void handleTemp1Value(String command) {
+        if (isInitialStart) {
+            send(Commands.GET_ALL_TEMP_SETTINGS);
+            isInitialStart = false;
+        }
+
         Double temp1 = CommandUtils.getDoubleFromExp(command, Commands.TEMP_1_VALUE, 1);
         if (temp1 != null) {
             firstTemperature.setTemp(temp1);
@@ -337,7 +344,8 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
             String command = CommandUtils.getCommand(commandsCache.toString());
             handleCommands(command);
 
-            commandsCache = new StringBuilder(Objects.requireNonNull(CommandUtils.removeCommandFromExp(commandsCache.toString())));
+            String cache = CommandUtils.removeCommandFromExp(commandsCache.toString());
+            commandsCache = new StringBuilder(cache == null ? "" : cache);
         }
     }
 

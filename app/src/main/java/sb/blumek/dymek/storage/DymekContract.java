@@ -42,4 +42,27 @@ public final class DymekContract {
         static final String SQL_DELETE_ENTRY =
                 "DROP TABLE IF EXISTS " + TemperaturesProfileSchema.TABLE_NAME + ";";
     }
+
+    static class TemperatureCacheSchema implements BaseColumns {
+        static final String TABLE_NAME = "temperatures_cache";
+        static final String COLUMN_NAME_TEMP_1_NAME = TemperaturesProfileSchema.COLUMN_NAME_TEMP_1_NAME;
+        static final String COLUMN_NAME_TEMP_1_MIN_VAL = TemperaturesProfileSchema.COLUMN_NAME_TEMP_1_MIN_VAL;
+        static final String COLUMN_NAME_TEMP_1_MAX_VAL = TemperaturesProfileSchema.COLUMN_NAME_TEMP_1_MAX_VAL;
+        static final String COLUMN_NAME_TEMP_2_NAME = TemperaturesProfileSchema.COLUMN_NAME_TEMP_2_NAME;
+        static final String COLUMN_NAME_TEMP_2_MIN_VAL = TemperaturesProfileSchema.COLUMN_NAME_TEMP_2_MIN_VAL;
+        static final String COLUMN_NAME_TEMP_2_MAX_VAL = TemperaturesProfileSchema.COLUMN_NAME_TEMP_2_MAX_VAL;
+
+        static final String SQL_CREATE_ENTRY =
+                "CREATE TABLE " + TemperatureCacheSchema.TABLE_NAME + " (" +
+                        TemperaturesProfileSchema._ID + " INTEGER PRIMARY KEY," +
+                        TemperaturesProfileSchema.COLUMN_NAME_TEMP_1_NAME + " TEXT," +
+                        TemperaturesProfileSchema.COLUMN_NAME_TEMP_1_MIN_VAL + "REAL," +
+                        TemperaturesProfileSchema.COLUMN_NAME_TEMP_1_MAX_VAL + "REAL," +
+                        TemperaturesProfileSchema.COLUMN_NAME_TEMP_2_NAME + " TEXT," +
+                        TemperaturesProfileSchema.COLUMN_NAME_TEMP_2_MIN_VAL + "REAL," +
+                        TemperaturesProfileSchema.COLUMN_NAME_TEMP_2_MAX_VAL + "REAL);";
+
+        static final String SQL_DELETE_ENTRY =
+                "DROP TABLE IF EXISTS " + TemperatureCacheSchema.TABLE_NAME + ";";
+    }
 }
