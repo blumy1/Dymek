@@ -4,7 +4,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class TempNameValidator implements Validator {
-    private static final String VALID_NAME_CONTAINS = "[A-Za-z0-9:\\- <>\"\'\\.,\\[\\]\\(\\)\\{\\}]+";
+    private static final String VALID_NAME_CONTAINS = "[A-Za-z0-9:\\- _<>\"\'.,(){}]+";
 
     private String tempName;
     private Pattern namePattern;
@@ -18,7 +18,7 @@ public class TempNameValidator implements Validator {
 
     @Override
     public boolean isValid() {
-        return patternMatcher.matches();
+        return !tempName.isEmpty() && patternMatcher.matches();
     }
 
     private void getPatternMatcher(Pattern pattern) {

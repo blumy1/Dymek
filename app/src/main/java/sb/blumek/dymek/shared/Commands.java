@@ -25,8 +25,8 @@ public class Commands {
     public static final String TEMP_1_MAX_VALUE = "\\[T1Max-(-?\\d+(\\.\\d+)?)\\]";
     public static final String TEMP_2_MIN_VALUE = "\\[T2Min-(-?\\d+(\\.\\d+)?)\\]";
     public static final String TEMP_2_MAX_VALUE = "\\[T2Max-(-?\\d+(\\.\\d+)?)\\]";
-    public static final String TEMP_1_NAME = "\\[TNam1-([A-Za-z0-9:\\- <>\"'\\.,\\(\\)\\{\\}]+)\\]";
-    public static final String TEMP_2_NAME = "\\[TNam2-([A-Za-z0-9:\\- <>\"'\\.,\\(\\)\\{\\}]+)\\]";
+    public static final String TEMP_1_NAME = "\\[TNam1-([A-Za-z0-9:\\- _<>\"'\\.,\\(\\)\\{\\}]+)\\]";
+    public static final String TEMP_2_NAME = "\\[TNam2-([A-Za-z0-9:\\- _<>\"'\\.,\\(\\)\\{\\}]+)\\]";
 
-    public static final String VALID_NAME = "[A-Za-z0-9:\\- <>\"\'\\.,\\(\\)\\{\\}/]+";
+    public static final String VALID_NAME = "[A-Za-z0-9:\\- _<>\"\'\\.,\\(\\)\\{\\}]+";
 }

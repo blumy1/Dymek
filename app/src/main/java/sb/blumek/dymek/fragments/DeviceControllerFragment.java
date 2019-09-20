@@ -243,6 +243,7 @@ public class DeviceControllerFragment extends Fragment implements ServiceConnect
 
     private void turnOffAlarm() {
         if (service != null) {
+            service.stopAlarm();
             service.send(Commands.OFF_ALARM);
             service.send(Commands.OFF_ALARM);
         }

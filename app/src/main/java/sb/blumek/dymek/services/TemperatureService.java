@@ -4,6 +4,9 @@ import android.app.Service;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Intent;
+import android.media.AudioAttributes;
+import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
@@ -17,7 +20,7 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 
 import java.io.IOException;
-import java.util.Objects;
+import java.util.Locale;
 
 import sb.blumek.dymek.R;
 import sb.blumek.dymek.listeners.AlarmListener;
@@ -32,6 +35,7 @@ import sb.blumek.dymek.utils.CommandUtils;
 
 public class TemperatureService extends Service implements BluetoothListener, Observable {
     private static final String TAG = TemperatureService.class.getSimpleName();
+    private static final long ALARM_DELAY_SECONDS = 10 * 1000;
 
     public class ServiceBinder extends Binder {
         public TemperatureService getService() {
@@ -48,6 +52,8 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
     @Override
     public void onCreate() {
         super.onCreate();
+        setUpAlarm();
+        isAfterAlarmDelay = true;
         temperatureCache = new TemperatureCache(getApplicationContext());
     }
 
@@ -61,6 +67,9 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
     private ConnectionState connectionState;
     private String deviceAddress;
     private BluetoothSocket socket;
+
+    private MediaPlayer mediaPlayer;
+    private boolean isAfterAlarmDelay;
 
     private TemperatureCache temperatureCache;
 
@@ -263,6 +272,8 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
         String alarmUp = CommandUtils.getStringFromExp(command, Commands.ALARM_UP, 0);
         if (alarmUp != null && isAvailableAlarmListener()) {
             alarmListener.alarmActivated();
+            if (isAfterAlarmDelay)
+                startAlarm();
         }
     }
 
@@ -270,6 +281,7 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
         String alarmDown = CommandUtils.getStringFromExp(command, Commands.ALARM_DOWN, 0);
         if (alarmDown != null && isAvailableAlarmListener()) {
             alarmListener.alarmDeactivated();
+            stopAlarm();
         }
     }
 
@@ -378,5 +390,48 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
 
     public void sendSettingsRequest() {
         send(Commands.GET_ALL_TEMP_SETTINGS);
+    }
+
+    public void setUpAlarm() {
+        Log.d(TAG, "Setting up an alarm.");
+        mediaPlayer = new MediaPlayer();
+        try {
+            Log.d(TAG, "Setting up a data source for the alarm.");
+            Uri mediaPath = Uri.parse(String.format(Locale.ENGLISH ,"android.resource://%s/%d", getPackageName(), R.raw.alarm));
+            mediaPlayer.setDataSource(getApplicationContext(), mediaPath);
+
+            Log.d(TAG, "Setting up audio attributes for the alarm.");
+            mediaPlayer.setAudioAttributes(new AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build());
+
+            mediaPlayer.prepare();
+        } catch (Exception e) {
+            Log.e(TAG, "An error occurred while setting up the alarm.");
+            e.printStackTrace();
+        }
+    }
+
+    public void startAlarm() {
+        if (mediaPlayer.isPlaying()) {
+            return;
+        }
+
+        new Handler().postDelayed(() -> {
+            isAfterAlarmDelay = true;
+        }, ALARM_DELAY_SECONDS);
+
+        isAfterAlarmDelay = false;
+        mediaPlayer.start();
+    }
+
+    public void stopAlarm() {
+        if (!mediaPlayer.isPlaying()) {
+            return;
+        }
+
+        mediaPlayer.pause();
+        mediaPlayer.seekTo(0);
     }
 }

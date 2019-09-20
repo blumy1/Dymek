@@ -374,7 +374,8 @@ public class BluetoothSocket extends BluetoothGattCallback {
             return;
         }
         if(characteristic == writeCharacteristic) {
-            Log.d(TAG,"write finished, status="+status);
+            Log.d(TAG,"write finished, status = " + status);
+            Log.d(TAG,"Written = " + new String(characteristic.getValue()));
             writeNext();
         }
     }
