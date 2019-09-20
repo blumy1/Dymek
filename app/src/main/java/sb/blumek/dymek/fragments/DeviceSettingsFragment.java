@@ -32,12 +32,13 @@ import sb.blumek.dymek.services.TemperatureService;
 import sb.blumek.dymek.shared.Commands;
 import sb.blumek.dymek.shared.Temperature;
 import sb.blumek.dymek.storage.DeviceStorage;
+import sb.blumek.dymek.storage.TemperatureCache;
 import sb.blumek.dymek.validators.TempMaxValueValidator;
 import sb.blumek.dymek.validators.TempMinValueValidator;
 import sb.blumek.dymek.validators.TempNameValidator;
 import sb.blumek.dymek.validators.Validator;
 
-public class DeviceSettingsFragment extends Fragment implements ServiceConnection, Observer {
+public class DeviceSettingsFragment extends Fragment implements ServiceConnection {
     public final static String TAG = DeviceSettingsFragment.class.getSimpleName();
 
     private TemperatureService service;
@@ -55,24 +56,12 @@ public class DeviceSettingsFragment extends Fragment implements ServiceConnectio
     }
 
     @Override
-    public void update(Observable observable) {
-        if (observable instanceof TemperatureService) {
-            TemperatureService service = (TemperatureService) observable;
-
-            Temperature temp1 = service.getFirstTemperature();
-            Temperature temp2 = service.getSecondTemperature();
-        }
-    }
-
-    @Override
     public void onServiceConnected(ComponentName name, IBinder binder) {
         service = ((TemperatureService.ServiceBinder) binder).getService();
-        service.registerObserver(this);
     }
 
     @Override
     public void onServiceDisconnected(ComponentName name) {
-        service.unregisterObserver(this);
         service = null;
     }
 
@@ -101,8 +90,33 @@ public class DeviceSettingsFragment extends Fragment implements ServiceConnectio
     public void onStart() {
         super.onStart();
         showBackButton();
+
+        TemperatureCache temperatureCache = new TemperatureCache(getContext());
+        Temperature firsTemperature = temperatureCache.getFirstTemperature();
+        Temperature secondTemperature = temperatureCache.getSecondTemperature();
+
+        setTempName(firsTemperature.getName(), temp1NameET);
+        setTempValue(firsTemperature.getTempMin(), temp1MinET);
+        setTempValue(firsTemperature.getTempMax(), temp1MaxET);
+
+        setTempName(secondTemperature.getName(), temp2NameET);
+        setTempValue(secondTemperature.getTempMin(), temp2MinET);
+        setTempValue(secondTemperature.getTempMax(), temp2MaxET);
+
         if(service == null)
             getActivity().startService(new Intent(getActivity(), TemperatureService.class));
+    }
+
+    private void setTempName(String name, EditText editText) {
+        if (name != null) {
+            editText.setText(name);
+        }
+    }
+
+    private void setTempValue(Double value, EditText editText) {
+        if (value != null) {
+            editText.setText(String.valueOf(value));
+        }
     }
 
     @Override
@@ -122,10 +136,17 @@ public class DeviceSettingsFragment extends Fragment implements ServiceConnectio
         super.onViewCreated(view, savedInstanceState);
 
         sendSettingsButton = view.findViewById(R.id.set_btn);
-        sendSettingsButton.setOnClickListener(button -> sendSettings());
+        sendSettingsButton.setOnClickListener(button -> {
+            if (service != null && service.isConnected()) {
+                sendSettings();
+            }
+        });
 
         disconnectButton = view.findViewById(R.id.disconnect_ll);
-        disconnectButton.setOnClickListener(button -> confirmDeviceDisconnect());
+        disconnectButton.setOnClickListener(button -> {
+            if (service != null)
+                confirmDeviceDisconnect();
+        });
 
         temp1MinET = view.findViewById(R.id.temp1Min_et);
         temp1MaxET = view.findViewById(R.id.temp1Max_et);
@@ -193,6 +214,7 @@ public class DeviceSettingsFragment extends Fragment implements ServiceConnectio
                 Thread.sleep(delay);
                 sendTempMaxValue(Double.valueOf(temp2MaxET.getText().toString()), Commands.SET_TEMP_2_MAX);
                 send("[]");
+                service.sendSettingsRequest();
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

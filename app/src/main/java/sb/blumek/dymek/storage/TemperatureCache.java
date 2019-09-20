@@ -21,7 +21,6 @@ public class TemperatureCache {
         SQLiteDatabase db = dbHelper.getWritableDatabase();
 
         ContentValues values = new ContentValues();
-
         values.put(TemperatureCacheSchema.COLUMN_NAME_TEMP_1_NAME, firstTemperature.getName());
         values.put(TemperatureCacheSchema.COLUMN_NAME_TEMP_1_MIN_VAL, firstTemperature.getTempMin());
         values.put(TemperatureCacheSchema.COLUMN_NAME_TEMP_1_MAX_VAL, firstTemperature.getTempMax());
@@ -51,7 +50,7 @@ public class TemperatureCache {
             return temperature;
         }
 
-        return null;
+        return new Temperature();
     }
 
     public Temperature getSecondTemperature() {
@@ -72,12 +71,17 @@ public class TemperatureCache {
             return temperature;
         }
 
-        return null;
+        return new Temperature();
     }
 
     public void deleteTemperatures() {
         SQLiteDatabase db = dbHelper.getReadableDatabase();
 
         db.delete(TemperatureCacheSchema.TABLE_NAME, null, null);
+    }
+
+    public void updateTemperatures(Temperature firstTemperature, Temperature secondTemperature) {
+        deleteTemperatures();
+        saveTemperatures(firstTemperature, secondTemperature);
     }
 }

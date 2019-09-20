@@ -27,6 +27,7 @@ import sb.blumek.dymek.observables.Observable;
 import sb.blumek.dymek.shared.Commands;
 import sb.blumek.dymek.shared.Temperature;
 import sb.blumek.dymek.sockets.BluetoothSocket;
+import sb.blumek.dymek.storage.TemperatureCache;
 import sb.blumek.dymek.utils.CommandUtils;
 
 public class TemperatureService extends Service implements BluetoothListener, Observable {
@@ -44,6 +45,12 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
         Connected
     }
 
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        temperatureCache = new TemperatureCache(getApplicationContext());
+    }
+
     private final Handler mainLooper;
     private final IBinder binder;
     private ConnectionListener connectionListener;
@@ -54,6 +61,8 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
     private ConnectionState connectionState;
     private String deviceAddress;
     private BluetoothSocket socket;
+
+    private TemperatureCache temperatureCache;
 
     private final int authDelay = 5000;
     private boolean afterAuthDelay = true;
@@ -270,15 +279,21 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
 
     private void handleTemp2MaxCommand(String command) {
         Double t2Max = CommandUtils.getDoubleFromExp(command, Commands.TEMP_2_MAX_VALUE, 1);
-        if (t2Max != null) {
+        if (t2Max != null && !t2Max.equals(secondTemperature.getTempMax())) {
             secondTemperature.setTempMax(t2Max);
+            updateTemperatures();
         }
+    }
+
+    private void updateTemperatures() {
+        temperatureCache.updateTemperatures(firstTemperature, secondTemperature);
     }
 
     private void handleTemp2MinCommand(String command) {
         Double t2Min = CommandUtils.getDoubleFromExp(command, Commands.TEMP_2_MIN_VALUE, 1);
         if (t2Min != null) {
             secondTemperature.setTempMin(t2Min);
+            updateTemperatures();
         }
     }
 
@@ -293,6 +308,7 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
         String t2Name = CommandUtils.getStringFromExp(command, Commands.TEMP_2_NAME, 1);
         if (t2Name != null) {
             secondTemperature.setName(t2Name);
+            updateTemperatures();
         }
     }
 
@@ -300,6 +316,7 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
         Double t1Max = CommandUtils.getDoubleFromExp(command, Commands.TEMP_1_MAX_VALUE, 1);
         if (t1Max != null) {
             firstTemperature.setTempMax(t1Max);
+            updateTemperatures();
         }
     }
 
@@ -307,6 +324,7 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
         Double t1Min = CommandUtils.getDoubleFromExp(command, Commands.TEMP_1_MIN_VALUE, 1);
         if (t1Min != null) {
             firstTemperature.setTempMin(t1Min);
+            updateTemperatures();
         }
     }
 
@@ -326,6 +344,7 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
         String t1Name = CommandUtils.getStringFromExp(command, Commands.TEMP_1_NAME, 1);
         if (t1Name != null) {
             firstTemperature.setName(t1Name);
+            updateTemperatures();
         }
     }
 
@@ -355,5 +374,9 @@ public class TemperatureService extends Service implements BluetoothListener, Ob
 
     public Temperature getSecondTemperature() {
         return secondTemperature;
+    }
+
+    public void sendSettingsRequest() {
+        send(Commands.GET_ALL_TEMP_SETTINGS);
     }
 }

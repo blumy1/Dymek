@@ -37,4 +37,14 @@ public class Temperature {
     public void setTempMax(Double tempMax) {
         this.tempMax = tempMax;
     }
+
+    @Override
+    public String toString() {
+        return "Temperature [" +
+                "name='" + name + '\'' +
+                ", tempMin=" + tempMin +
+                ", temp=" + temp +
+                ", tempMax=" + tempMax +
+                ']';
+    }
 }
